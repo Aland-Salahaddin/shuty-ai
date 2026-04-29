@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { fetchRecentMessages, fetchSessions, deleteSession, renameSession, initD1Schema } from '@/lib/d1'
 import { createClient } from '@/lib/supabase/server'
 
+export const runtime = 'edge';
+
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

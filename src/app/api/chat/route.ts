@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { saveMessage } from '@/lib/d1'
 import { createClient } from '@/lib/supabase/server'
 
+export const runtime = 'edge';
+
 const GEMINI_KEYS = [
   'AIzaSyDni5BYZ8NoaIyuDdFyUUitmaDYN2L5rb0',
   'AIzaSyBPAhMeV69NRpbYcWigp8MvA4YZvSLxOMs',
