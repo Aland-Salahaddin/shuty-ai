@@ -1,0 +1,118 @@
+/**
+ * Cloudflare D1 REST API client.
+ */
+
+const CF_API = 'https://api.cloudflare.com/client/v4'
+const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID!
+const DB_ID = process.env.CLOUDFLARE_D1_DATABASE_ID!
+const TOKEN = process.env.CLOUDFLARE_API_TOKEN!
+
+interface D1Result<T = Record<string, unknown>> {
+  results: T[]
+  success: boolean
+  errors: { message: string }[]
+}
+
+async function d1Query<T = Record<string, unknown>>(
+  sql: string,
+  params: (string | number | null)[] = []
+): Promise<D1Result<T>> {
+  const res = await fetch(
+    `${CF_API}/accounts/${ACCOUNT_ID}/d1/database/${DB_ID}/query`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ sql, params }),
+      cache: 'no-store',
+    }
+  )
+  const json = await res.json()
+  if (Array.isArray(json.result)) {
+    return json.result[0] as D1Result<T>
+  }
+  return json as D1Result<T>
+}
+
+/** Ensure tables exist */
+export async function initD1Schema(): Promise<void> {
+  await d1Query(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `)
+  await d1Query(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      user_id TEXT NOT NULL,
+      session_id TEXT NOT NULL,
+      role TEXT NOT NULL CHECK(role IN ('user','assistant')),
+      content TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `)
+}
+
+export interface Message {
+  id: string
+  user_id: string
+  session_id: string
+  role: 'user' | 'assistant'
+  content: string
+  created_at: string
+}
+
+/** Save a message to D1 */
+export async function saveMessage(msg: Omit<Message, 'id' | 'created_at'>): Promise<void> {
+  const { v4: uuidv4 } = await import('uuid')
+  const id = uuidv4()
+  
+  // Ensure session exists
+  await d1Query(
+    `INSERT OR IGNORE INTO sessions (id, user_id, title) VALUES (?, ?, ?)`,
+    [msg.session_id, msg.user_id, msg.content.substring(0, 30)]
+  )
+
+  await d1Query(
+    `INSERT INTO messages (id, user_id, session_id, role, content) VALUES (?, ?, ?, ?, ?)`,
+    [id, msg.user_id, msg.session_id, msg.role, msg.content]
+  )
+}
+
+/** Rename a session */
+export async function renameSession(sessionId: string, userId: string, title: string): Promise<void> {
+  await d1Query(
+    `UPDATE sessions SET title = ? WHERE id = ? AND user_id = ?`,
+    [title, sessionId, userId]
+  )
+}
+
+/** Delete a session and its messages */
+export async function deleteSession(sessionId: string, userId: string): Promise<void> {
+  await d1Query(`DELETE FROM messages WHERE session_id = ? AND user_id = ?`, [sessionId, userId])
+  await d1Query(`DELETE FROM sessions WHERE id = ? AND user_id = ?`, [sessionId, userId])
+}
+
+/** Fetch messages */
+export async function fetchRecentMessages(userId: string, sessionId?: string, limit = 50): Promise<Message[]> {
+  if (!sessionId) return []
+  const result = await d1Query<Message>(
+    `SELECT * FROM messages WHERE user_id = ? AND session_id = ? ORDER BY created_at ASC LIMIT ?`,
+    [userId, sessionId, limit]
+  )
+  return result.results || []
+}
+
+/** Fetch unique sessions */
+export async function fetchSessions(userId: string): Promise<{ id: string; title: string; created_at: string }[]> {
+  const result = await d1Query<{ id: string; title: string; created_at: string }>(
+    `SELECT * FROM sessions WHERE user_id = ? ORDER BY created_at DESC LIMIT 50`,
+    [userId]
+  )
+  return result.results || []
+}
