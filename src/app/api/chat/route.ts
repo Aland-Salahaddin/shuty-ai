@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export const runtime = 'edge';
 
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001'; // Stable and efficient
+const OPENROUTER_MODEL = 'meta-llama/llama-3.1-8b-instruct:free'; // Extremely fast
 
 const SYSTEM_PROMPT = `You are Shuty, the world's most advanced Kurdish AI expert. 
 Your goal is to provide helpful, natural, and accurate responses strictly in Sorani Kurdish.
