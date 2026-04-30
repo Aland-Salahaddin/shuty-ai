@@ -4,16 +4,14 @@ import { createClient } from '@/lib/supabase/server'
 
 export const runtime = 'edge';
 
-const GEMINI_KEYS = [
-  'AIzaSyDni5BYZ8NoaIyuDdFyUUitmaDYN2L5rb0',
-  'AIzaSyBPAhMeV69NRpbYcWigp8MvA4YZvSLxOMs',
-  'AIzaSyArVewDPqiYEEQh_FuzmI0JdQbXd-aJ-Ns',
-  'AIzaSyDANT7CBaUpH-oBmtCT1k2QvY5z31_80pQ',
-  'AIzaSyApugFRrqXawFpJc_fY61uGoju-yye2cfk',
-  'AIzaSyAZmuWxTo3ApXaTeeNRXfcZNEpaPbHNhIg'
-]
+// Get keys from environment variable, split by comma, and remove empty spaces
+const ENV_KEYS = process.env.GEMINI_API_KEYS ? process.env.GEMINI_API_KEYS.split(',').map(k => k.trim()) : [];
+const DEFAULT_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
-const MODELS = ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash']
+// Combine all keys, removing duplicates and empty ones
+const GEMINI_KEYS = Array.from(new Set([...ENV_KEYS, DEFAULT_KEY].filter(Boolean)));
+
+const MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
 
 const SYSTEM_PROMPT = `You are Shuty, the world's most advanced Kurdish AI expert. 
 Your goal is to provide helpful, natural, and accurate responses strictly in Sorani Kurdish.
