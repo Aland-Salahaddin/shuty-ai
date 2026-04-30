@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 export const runtime = 'edge';
 
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001:free'; // Using the FREE version
+const OPENROUTER_MODEL = 'meta-llama/llama-3.3-70b-instruct:free'; // Using Llama 3.3 70B FREE
 
 // Gemini configuration (as fallback)
 const ENV_KEYS = process.env.GEMINI_API_KEYS ? process.env.GEMINI_API_KEYS.split(',').map(k => k.trim()) : [];
@@ -84,10 +84,13 @@ export async function POST(req: NextRequest) {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                system_instruction: {
-                  parts: [{ text: SYSTEM_PROMPT }]
-                },
-                contents: contents,
+                contents: [
+                  { role: 'user', parts: [{ text: `SYSTEM INSTRUCTION: ${SYSTEM_PROMPT}` }] },
+                  ...messages.map((m: any) => ({
+                    role: m.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: m.content }]
+                  }))
+                ],
                 generationConfig: {
                   temperature: 0.7,
                   topP: 0.95,
