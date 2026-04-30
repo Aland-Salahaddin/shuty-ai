@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  /* config options here */
+const nextConfig = {
+  // Cloudflare Pages works best with these settings
 };
 
 export default nextConfig;
