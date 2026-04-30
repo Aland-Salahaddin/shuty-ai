@@ -5,13 +5,13 @@ import { createClient } from '@/lib/supabase/server'
 export const runtime = 'edge';
 
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_MODEL = 'cognitivecomputations/dolphin3.0-r1-mistral-24b';
+const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001:free'; // Using the FREE version
 
 // Gemini configuration (as fallback)
 const ENV_KEYS = process.env.GEMINI_API_KEYS ? process.env.GEMINI_API_KEYS.split(',').map(k => k.trim()) : [];
 const DEFAULT_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 const GEMINI_KEYS = Array.from(new Set([...ENV_KEYS, DEFAULT_KEY].filter(Boolean)));
-const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro-latest']
+const GEMINI_MODELS = ['gemini-1.5-flash', 'gemini-1.5-pro']
 
 const SYSTEM_PROMPT = `You are Shuty, the world's most advanced Kurdish AI expert. 
 Your goal is to provide helpful, natural, and accurate responses strictly in Sorani Kurdish.
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       for (const key of GEMINI_KEYS) {
         for (const model of GEMINI_MODELS) {
           try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${key}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
