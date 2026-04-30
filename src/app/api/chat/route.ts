@@ -3,14 +3,20 @@ import { NextResponse } from 'next/server';
 export const runtime = 'edge';
 
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
+// List of 5 different FREE models to ensure one always works
 const OPENROUTER_MODELS = [
   'meta-llama/llama-3.1-8b-instruct:free',
-  'google/gemini-2.0-flash-001'
+  'mistralai/mistral-7b-instruct:free',
+  'google/gemini-2.0-flash-001',
+  'meta-llama/llama-3.3-70b-instruct:free',
+  'qwen/qwen-2.5-72b-instruct:free'
 ];
 
-const GEMINI_KEYS = process.env.GEMINI_API_KEYS 
-  ? process.env.GEMINI_API_KEYS.split(',').map(k => k.trim()) 
-  : [process.env.GOOGLE_GENERATIVE_AI_API_KEY].filter(Boolean);
+// Combine all possible Gemini keys
+const GEMINI_KEYS = Array.from(new Set([
+  ...(process.env.GEMINI_API_KEYS ? process.env.GEMINI_API_KEYS.split(',').map(k => k.trim()) : []),
+  process.env.GOOGLE_GENERATIVE_AI_API_KEY
+].filter(Boolean)));
 
 const SYSTEM_PROMPT = `You are Shuty, the world's most advanced Kurdish AI expert. 
 Your goal is to provide helpful, natural, and accurate responses strictly in Sorani Kurdish.
@@ -22,7 +28,7 @@ export async function POST(req: Request) {
     let responseText = '';
     let lastError = '';
 
-    // 1. TRY OPENROUTER FIRST
+    // 1. SMART RETRY WITH OPENROUTER (Try 5 different models)
     if (OPENROUTER_KEY) {
       for (const model of OPENROUTER_MODELS) {
         try {
@@ -41,20 +47,20 @@ export async function POST(req: Request) {
             })
           });
 
-          const data = await response.json();
-          if (data.choices?.[0]?.message?.content) {
-            responseText = data.choices[0].message.content;
-            break;
-          } else {
-            lastError = data.error?.message || "OpenRouter Error";
+          if (response.ok) {
+            const data = await response.json();
+            if (data.choices?.[0]?.message?.content) {
+              responseText = data.choices[0].message.content;
+              break; // SUCCESS!
+            }
           }
         } catch (e: any) {
-          lastError = e.message;
+          console.error(`Failed with ${model}:`, e.message);
         }
       }
     }
 
-    // 2. FALLBACK TO DIRECT GEMINI IF OPENROUTER FAILED
+    // 2. LAST RESORT: DIRECT GEMINI
     if (!responseText && GEMINI_KEYS.length > 0) {
       for (const key of GEMINI_KEYS as string[]) {
         try {
@@ -70,10 +76,12 @@ export async function POST(req: Request) {
             })
           });
 
-          const data = await res.json();
-          if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-            responseText = data.candidates[0].content.parts[0].text;
-            break;
+          if (res.ok) {
+            const data = await res.json();
+            if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+              responseText = data.candidates[0].content.parts[0].text;
+              break;
+            }
           }
         } catch (e: any) {
           lastError = e.message;
@@ -81,13 +89,16 @@ export async function POST(req: Request) {
       }
     }
 
+    // 3. IF EVERYTHING FAILS, DON'T SHOW A RED ERROR, SHOW A FRIENDLY MESSAGE
     if (!responseText) {
-      return NextResponse.json({ error: `All AI sources failed. Last error: ${lastError}` }, { status: 500 });
+      return NextResponse.json({ 
+        text: "ببوورە، لەم ساتەدا زۆربەی سەرچاوەکانمان قەرەباڵغن. تکایە تەنها یەک خولەکی تر هەوڵ بدەرەوە، Shuty یەکسەر ئامادە دەبێتەوە بۆ وەڵامدانەوەی تۆ. 😊" 
+      });
     }
 
     return NextResponse.json({ text: responseText });
 
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ text: "هەڵەیەک لە سیستەمدا ڕوویدا. تکایە پەیجەکە نوێ بکەرەوە." });
   }
 }
