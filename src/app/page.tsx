@@ -238,7 +238,7 @@ export default function HomePage() {
             © {toArabicIndic(2025)} shuty.ai — هەموو مافەکان پارێزراون
           </span>
           <span className="font-mono-kd text-xs" style={{ color: 'oklch(0.45 0.03 245)' }}>
-            دروستکراوە لە کوردستان · v{toArabicIndic('2.4')}-beta
+            دروستکراوە لە کوردستان · v{toArabicIndic('2.5')}-beta
           </span>
         </div>
       </footer>
