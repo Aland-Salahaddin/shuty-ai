@@ -4,14 +4,14 @@ import { createClient } from '@/lib/supabase/server'
 
 export const runtime = 'edge';
 
-// Get keys from environment variable, split by comma, and remove empty spaces
+const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_MODEL = 'cognitivecomputations/dolphin3.0-r1-mistral-24b';
+
+// Gemini configuration (as fallback)
 const ENV_KEYS = process.env.GEMINI_API_KEYS ? process.env.GEMINI_API_KEYS.split(',').map(k => k.trim()) : [];
 const DEFAULT_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-
-// Combine all keys, removing duplicates and empty ones
 const GEMINI_KEYS = Array.from(new Set([...ENV_KEYS, DEFAULT_KEY].filter(Boolean)));
-
-const MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
+const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash']
 
 const SYSTEM_PROMPT = `You are Shuty, the world's most advanced Kurdish AI expert. 
 Your goal is to provide helpful, natural, and accurate responses strictly in Sorani Kurdish.
@@ -46,37 +46,69 @@ export async function POST(req: NextRequest) {
     let responseText = null
     let lastError = ''
 
-    for (const key of GEMINI_KEYS) {
-      for (const model of MODELS) {
-        try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              system_instruction: {
-                parts: [{ text: SYSTEM_PROMPT }]
-              },
-              contents: contents,
-              generationConfig: {
-                temperature: 0.7,
-                topP: 0.95,
-                maxOutputTokens: 2048,
-              }
-            })
+    // 1. TRY OPENROUTER FIRST (Dolphin 3.0 R1)
+    if (OPENROUTER_KEY) {
+      try {
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${OPENROUTER_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            "model": OPENROUTER_MODEL,
+            "messages": [
+              { role: "system", content: SYSTEM_PROMPT },
+              ...messages
+            ]
           })
+        });
 
-          const data = await res.json()
-          if (res.ok) {
-            responseText = data.candidates?.[0]?.content?.parts?.[0]?.text
-            if (responseText) break
-          } else {
-            lastError = data.error?.message || JSON.stringify(data)
-          }
-        } catch (e: any) {
-          lastError = e.message
+        const data = await res.json();
+        if (res.ok) {
+          responseText = data.choices?.[0]?.message?.content;
+        } else {
+          lastError = data.error?.message || "OpenRouter Error";
         }
+      } catch (e: any) {
+        lastError = e.message;
       }
-      if (responseText) break
+    }
+
+    // 2. FALLBACK TO GEMINI IF OPENROUTER FAILED OR IS NOT CONFIGURED
+    if (!responseText) {
+      for (const key of GEMINI_KEYS) {
+        for (const model of GEMINI_MODELS) {
+          try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                system_instruction: {
+                  parts: [{ text: SYSTEM_PROMPT }]
+                },
+                contents: contents,
+                generationConfig: {
+                  temperature: 0.7,
+                  topP: 0.95,
+                  maxOutputTokens: 2048,
+                }
+              })
+            })
+
+            const data = await res.json()
+            if (res.ok) {
+              responseText = data.candidates?.[0]?.content?.parts?.[0]?.text
+              if (responseText) break
+            } else {
+              lastError = data.error?.message || JSON.stringify(data)
+            }
+          } catch (e: any) {
+            lastError = e.message
+          }
+        }
+        if (responseText) break
+      }
     }
 
     if (!responseText) {
