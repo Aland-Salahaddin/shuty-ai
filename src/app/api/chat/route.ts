@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 export const runtime = 'edge';
 
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_MODEL = 'meta-llama/llama-3.3-70b-instruct:free'; // Using Llama 3.3 70B FREE
+const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001'; // Very stable model
 
 // Gemini configuration (as fallback)
 const ENV_KEYS = process.env.GEMINI_API_KEYS ? process.env.GEMINI_API_KEYS.split(',').map(k => k.trim()) : [];
@@ -49,29 +49,31 @@ export async function POST(req: NextRequest) {
     // 1. TRY OPENROUTER FIRST (Dolphin 3.0 R1)
     if (OPENROUTER_KEY) {
       try {
-        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${OPENROUTER_KEY}`,
+            "HTTP-Referer": "https://shuty.ai", // Required by some OpenRouter models
+            "X-Title": "Shuty AI",
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            "model": OPENROUTER_MODEL,
-            "messages": [
-              { role: "system", content: SYSTEM_PROMPT },
+            model: OPENROUTER_MODEL,
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT },
               ...messages
-            ]
+            ],
           })
         });
 
-        const data = await res.json();
-        if (res.ok) {
-          responseText = data.choices?.[0]?.message?.content;
+        const data = await response.json();
+        if (data.choices?.[0]?.message?.content) {
+          responseText = data.choices[0].message.content;
         } else {
-          lastError = data.error?.message || "OpenRouter Error";
+          lastError = `OpenRouter Error: ${data.error?.message || JSON.stringify(data)}`;
         }
       } catch (e: any) {
-        lastError = e.message;
+        lastError = `OpenRouter Fetch Error: ${e.message}`;
       }
     }
 
@@ -80,22 +82,15 @@ export async function POST(req: NextRequest) {
       for (const key of GEMINI_KEYS) {
         for (const model of GEMINI_MODELS) {
           try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${key}`, {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                contents: [
-                  { role: 'user', parts: [{ text: `SYSTEM INSTRUCTION: ${SYSTEM_PROMPT}` }] },
-                  ...messages.map((m: any) => ({
-                    role: m.role === 'assistant' ? 'model' : 'user',
-                    parts: [{ text: m.content }]
-                  }))
-                ],
-                generationConfig: {
-                  temperature: 0.7,
-                  topP: 0.95,
-                  maxOutputTokens: 2048,
-                }
+                system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+                contents: messages.map((m: any) => ({
+                  role: m.role === 'assistant' ? 'model' : 'user',
+                  parts: [{ text: m.content }]
+                }))
               })
             })
 
