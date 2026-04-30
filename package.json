@@ -13,6 +13,7 @@
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.1",
     "@types/uuid": "^10.0.0",
+    "firebase": "^12.12.1",
     "groq-sdk": "^1.1.2",
     "lucide-react": "^1.14.0",
     "next": "15.5.7",
