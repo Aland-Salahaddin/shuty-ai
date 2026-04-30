@@ -11,7 +11,7 @@ const OPENROUTER_MODEL = 'cognitivecomputations/dolphin3.0-r1-mistral-24b';
 const ENV_KEYS = process.env.GEMINI_API_KEYS ? process.env.GEMINI_API_KEYS.split(',').map(k => k.trim()) : [];
 const DEFAULT_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 const GEMINI_KEYS = Array.from(new Set([...ENV_KEYS, DEFAULT_KEY].filter(Boolean)));
-const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash']
+const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro-latest']
 
 const SYSTEM_PROMPT = `You are Shuty, the world's most advanced Kurdish AI expert. 
 Your goal is to provide helpful, natural, and accurate responses strictly in Sorani Kurdish.
