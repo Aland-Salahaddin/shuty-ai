@@ -7,11 +7,11 @@ const OPENROUTER_KEYS = process.env.OPENROUTER_API_KEY ?
   process.env.OPENROUTER_API_KEY.split(',').map(k => k.trim()) : [];
 
 const OPENROUTER_MODELS = [
-  'meta-llama/llama-3.1-8b-instruct:free',
-  'mistralai/mistral-7b-instruct:free',
   'google/gemini-2.0-flash-001',
   'meta-llama/llama-3.3-70b-instruct:free',
-  'qwen/qwen-2.5-72b-instruct:free'
+  'qwen/qwen-2.5-72b-instruct:free',
+  'meta-llama/llama-3.1-8b-instruct:free',
+  'mistralai/mistral-7b-instruct:free'
 ];
 
 const SYSTEM_PROMPT = `You are Shuty, the world's most advanced Kurdish AI expert. 
