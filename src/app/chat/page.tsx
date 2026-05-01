@@ -8,6 +8,8 @@ import { Plus, Send, LogOut, Settings as SettingsIcon, Trash2, Edit2, Check, Men
 import Modal from '@/components/Modal'
 import { newSessionId } from '@/lib/utils'
 import { useUser, useClerk, UserButton } from '@clerk/nextjs'
+import { SupportChat } from '@/components/support-chat'
+import { SHUTY_CONFIG } from '@/lib/shuty-config'
 
 
 /* Parse **bold** and *italic* markdown inline */
@@ -128,6 +130,8 @@ export default function ChatPage() {
   const [editTitle, setEditTitle] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null)
+  const [supportOpen, setSupportOpen] = useState(false)
+  const [isPro, setIsPro] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const { user, isLoaded } = useUser()
@@ -332,28 +336,51 @@ export default function ChatPage() {
 
         <Squiggle color="#6B7341" />
 
-        {/* Footer / Profile */}
-        <div style={{ padding: '12px 16px', borderTop: '2px solid #1C1A17' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '10px', background: '#F0E6D0', border: '2px solid #1C1A17',
-            boxShadow: '-4px 4px 0 0 #1C1A17',
-            cursor: 'pointer',
-            pointerEvents: 'auto'
-          }}>
-            <UserButton showName appearance={{
-              elements: {
-                userButtonBox: {
-                  gap: '12px',
-                },
-                userButtonOuterIdentifier: {
-                  fontFamily: 'Vazirmatn',
-                  fontWeight: '800',
-                  color: '#1C1A17',
-                  fontSize: '14px'
-                }
-              }
-            }} />
+        {/* Profile & Support Section */}
+        <div style={{ padding: '16px', borderTop: '3px solid #1C1A17', background: '#EDE0C5' }}>
+          
+          {/* LIVE CHAT BUTTON */}
+          <button 
+            onClick={() => setSupportOpen(true)}
+            className="press-effect"
+            style={{
+              width: '100%',
+              padding: '12px',
+              background: '#B5462E',
+              color: '#F0E6D0',
+              border: '3px solid #1C1A17',
+              boxShadow: '-4px 4px 0 0 #1C1A17',
+              marginBottom: 16,
+              cursor: 'pointer',
+              fontFamily: 'Vazirmatn',
+              fontWeight: 900,
+              fontSize: 14,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+            }}
+          >
+            <div style={{ width: 8, height: 8, background: '#F0E6D0', borderRadius: '50%', boxShadow: '0 0 8px #F0E6D0' }} />
+            کڕینی پڕۆ (چاتی ڕاستەوخۆ)
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px' }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%', border: '2.5px solid #1C1A17',
+              overflow: 'hidden', background: '#D4A53A', flexShrink: 0
+            }}>
+              {user?.imageUrl ? <img src={user.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#1C1A17', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user?.fullName || 'بەکارهێنەر'}
+              </div>
+              <div style={{ fontSize: 10, color: '#6B7341', fontWeight: 600 }}>بەکارهێنەری {isPro ? 'Pro' : 'خۆڕایی'}</div>
+            </div>
+            <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#1C1A17', cursor: 'pointer', padding: 4 }} title="Logout">
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
       </div>
@@ -526,6 +553,8 @@ export default function ChatPage() {
         title="سڕینەوەی گفتوگۆ"
         message="ئایا دڵنیایت لە سڕینەوەی ئەم گفتوگۆیە؟ هەموو پەیامەکان بە یەکجاری دەسڕدرێنەوە."
       />
+
+      <SupportChat isOpen={supportOpen} onClose={() => setSupportOpen(false)} />
     </div>
   )
 }
