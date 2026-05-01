@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogOut, ArrowRight, Shield, Settings } from 'lucide-react'
+import { LogOut, ArrowRight, Lock, Settings, Eye, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
@@ -41,6 +41,12 @@ function Stamp({ label = 'ش' }: { label?: string }) {
 export default function SettingsPage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [pwOpen, setPwOpen] = useState(false)
+  const [newPw, setNewPw] = useState('')
+  const [confirmPw, setConfirmPw] = useState('')
+  const [showPw, setShowPw] = useState(false)
+  const [pwLoading, setPwLoading] = useState(false)
+  const [pwMsg, setPwMsg] = useState<{ text: string; ok: boolean } | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -57,6 +63,30 @@ export default function SettingsPage() {
     await fetch('/api/auth', { method: 'POST', body: JSON.stringify({ mode: 'logout' }) })
     router.push('/')
     router.refresh()
+  }
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPwMsg(null)
+    if (newPw.length < 6) {
+      setPwMsg({ text: 'وشەی نهێنی دەبێت لانیکەم ٦ پیت بێت.', ok: false })
+      return
+    }
+    if (newPw !== confirmPw) {
+      setPwMsg({ text: 'وشەی نهێنییەکان یەک نین. دووبارە بنووسە.', ok: false })
+      return
+    }
+    setPwLoading(true)
+    const { error } = await supabase.auth.updateUser({ password: newPw })
+    setPwLoading(false)
+    if (error) {
+      setPwMsg({ text: `هەڵە: ${error.message}`, ok: false })
+    } else {
+      setPwMsg({ text: 'وشەی نهێنی بەسەرکەوتوویی گۆڕدرا! ✓', ok: true })
+      setNewPw('')
+      setConfirmPw('')
+      setTimeout(() => { setPwOpen(false); setPwMsg(null) }, 2000)
+    }
   }
 
   if (loading) return (
@@ -121,30 +151,107 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Security card */}
+          {/* Password change card */}
           <div style={{
             background: '#F0E6D0', border: '3px solid #1C1A17',
             boxShadow: '-7px 7px 0 0 #D4A53A',
             padding: '24px', transform: 'rotate(-0.3deg)',
           }}>
+            {/* Header row — always visible */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 36, height: 36, border: '2.5px solid #1C1A17', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#EDE0C5' }}>
-                  <Shield size={18} />
+                  <Lock size={18} />
                 </div>
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: 15 }}>ئاسایشی هەژمار</div>
-                  <div style={{ fontSize: 11, color: '#6B7341', fontWeight: 500, marginTop: 2 }}>گۆڕینی وشەی نهێنی و پاراستن</div>
+                  <div style={{ fontWeight: 800, fontSize: 15 }}>گۆڕینی وشەی نهێنی</div>
+                  <div style={{ fontSize: 11, color: '#6B7341', fontWeight: 500, marginTop: 2 }}>وشەی نهێنیی نوێ دیاری بکە</div>
                 </div>
               </div>
-              <button style={{
-                padding: '6px 14px', background: '#D4A53A', color: '#1C1A17',
-                border: '2px solid #1C1A17', fontFamily: 'Vazirmatn', fontWeight: 700,
-                fontSize: 12, cursor: 'pointer', boxShadow: '-3px 3px 0 0 #1C1A17',
-              }}>
-                بەڕێوەبردن
+              <button
+                onClick={() => { setPwOpen(o => !o); setPwMsg(null) }}
+                style={{
+                  padding: '6px 14px', background: pwOpen ? '#1C1A17' : '#D4A53A',
+                  color: pwOpen ? '#F0E6D0' : '#1C1A17',
+                  border: '2px solid #1C1A17', fontFamily: 'Vazirmatn', fontWeight: 700,
+                  fontSize: 12, cursor: 'pointer', boxShadow: '-3px 3px 0 0 #1C1A17',
+                }}
+              >
+                {pwOpen ? 'داخستن' : 'گۆڕین'}
               </button>
             </div>
+
+            {/* Expandable form */}
+            {pwOpen && (
+              <form onSubmit={handleChangePassword} style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {/* New password */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 5 }}>وشەی نهێنیی نوێ</label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showPw ? 'text' : 'password'}
+                      value={newPw}
+                      onChange={e => setNewPw(e.target.value)}
+                      placeholder="لانیکەم ٦ پیت"
+                      required
+                      style={{
+                        width: '100%', padding: '10px 40px 10px 12px', boxSizing: 'border-box',
+                        background: '#EDE0C5', border: '2.5px solid #1C1A17',
+                        fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17', outline: 'none',
+                      }}
+                    />
+                    <button type="button" onClick={() => setShowPw(s => !s)} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#6B7341' }}>
+                      {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm password */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 5 }}>دووبارە بنووسە</label>
+                  <input
+                    type={showPw ? 'text' : 'password'}
+                    value={confirmPw}
+                    onChange={e => setConfirmPw(e.target.value)}
+                    placeholder="وشەی نهێنی دووبارە بنووسە"
+                    required
+                    style={{
+                      width: '100%', padding: '10px 12px', boxSizing: 'border-box',
+                      background: '#EDE0C5', border: '2.5px solid #1C1A17',
+                      fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17', outline: 'none',
+                    }}
+                  />
+                </div>
+
+                {/* Feedback */}
+                {pwMsg && (
+                  <div style={{
+                    padding: '10px 14px', fontSize: 12, fontWeight: 700,
+                    background: pwMsg.ok ? 'rgba(107,115,65,0.12)' : 'rgba(181,70,46,0.10)',
+                    border: `2px solid ${pwMsg.ok ? '#6B7341' : '#B5462E'}`,
+                    color: pwMsg.ok ? '#6B7341' : '#B5462E',
+                    boxShadow: `-3px 3px 0 0 ${pwMsg.ok ? '#6B7341' : '#B5462E'}`,
+                  }}>
+                    {pwMsg.text}
+                  </div>
+                )}
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={pwLoading}
+                  style={{
+                    padding: '12px', background: pwLoading ? '#C8A882' : '#B5462E',
+                    color: '#F0E6D0', border: '2.5px solid #1C1A17',
+                    fontFamily: 'Vazirmatn', fontWeight: 800, fontSize: 14,
+                    cursor: pwLoading ? 'not-allowed' : 'pointer',
+                    boxShadow: pwLoading ? 'none' : '-4px 4px 0 0 #1C1A17',
+                  }}
+                >
+                  {pwLoading ? 'چاوەڕوان بە...' : 'پاشەکەوتکردن'}
+                </button>
+              </form>
+            )}
           </div>
 
           {/* Pricing card */}
