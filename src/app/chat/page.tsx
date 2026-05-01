@@ -2,9 +2,23 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Send, LogOut, Settings as SettingsIcon, Home, Trash2, Edit2, Check, Menu, X } from 'lucide-react'
+import { Plus, Send, LogOut, Settings as SettingsIcon, Trash2, Edit2, Check, Menu, X } from 'lucide-react'
 import Modal from '@/components/Modal'
 import { newSessionId } from '@/lib/utils'
+
+/* Parse **bold** and *italic* markdown inline */
+function renderMarkdown(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g)
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} style={{ fontWeight: 800 }}>{part.slice(2, -2)}</strong>
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={i}>{part.slice(1, -1)}</em>
+    }
+    return part
+  })
+}
 
 /* ── helpers ───────────────────────────────────────────── */
 function toArabicDigits(n: string | number): string {
@@ -301,9 +315,6 @@ export default function ChatPage() {
 
         {/* Footer */}
         <div style={{ padding: '12px 16px', borderTop: '2px solid #1C1A17' }}>
-          <button onClick={() => router.push('/')} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#1C1A17', fontFamily: 'Vazirmatn', fontSize: 13, marginBottom: 2 }}>
-            <Home size={15} /> سەرەکی
-          </button>
           <button onClick={() => router.push('/settings')} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#1C1A17', fontFamily: 'Vazirmatn', fontSize: 13, marginBottom: 2 }}>
             <SettingsIcon size={15} /> ڕێکخستن
           </button>
@@ -401,10 +412,11 @@ export default function ChatPage() {
                 fontSize: 14, lineHeight: 1.7,
                 fontFamily: 'Vazirmatn', color: '#1C1A17',
                 transform: `rotate(${m.role === 'user' ? '0.5deg' : '-0.5deg'})`,
-                whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
               }}>
-                {m.content}
+                {m.content.split('\n').map((line, li) => (
+                  <p key={li} style={{ margin: li === 0 ? 0 : '4px 0 0' }}>{renderMarkdown(line)}</p>
+                ))}
               </div>
             </div>
           ))}

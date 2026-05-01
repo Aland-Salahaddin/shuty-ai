@@ -2,10 +2,41 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { User, Shield, LogOut, ArrowLeft } from 'lucide-react'
-import Navbar from '@/components/Navbar'
-import Background from '@/components/Background'
+import { LogOut, ArrowRight, Shield, Settings } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import Link from 'next/link'
+
+function Squiggle({ color = '#1C1A17' }: { color?: string }) {
+  return (
+    <svg viewBox="0 0 300 12" style={{ width: '100%', height: 12 }}>
+      <path d="M0,6 C20,0 40,12 60,6 C80,0 100,12 120,6 C140,0 160,12 180,6 C200,0 220,12 240,6 C260,0 280,12 300,6"
+        fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function Tape() {
+  return (
+    <div style={{
+      width: 80, height: 18, background: 'rgba(212,165,58,0.55)',
+      border: '1px solid rgba(212,165,58,0.8)',
+      transform: 'rotate(-2deg)',
+      backgroundImage: 'repeating-linear-gradient(90deg, transparent 0px, transparent 6px, rgba(255,255,255,0.25) 6px, rgba(255,255,255,0.25) 8px)',
+      boxShadow: '-2px 2px 0 0 rgba(28,26,23,0.12)',
+      flexShrink: 0,
+    }} />
+  )
+}
+
+function Stamp({ label = 'ش' }: { label?: string }) {
+  return (
+    <svg viewBox="0 0 80 80" width={64} height={64} style={{ transform: 'rotate(-8deg)', flexShrink: 0 }}>
+      <circle cx="40" cy="40" r="37" fill="none" stroke="#B5462E" strokeWidth="2.5" strokeDasharray="4 2" />
+      <circle cx="40" cy="40" r="30" fill="none" stroke="#B5462E" strokeWidth="1.5" />
+      <text x="40" y="46" textAnchor="middle" fontSize="22" fontFamily="Vazirmatn" fontWeight="800" fill="#B5462E">{label}</text>
+    </svg>
+  )
+}
 
 export default function SettingsPage() {
   const [user, setUser] = useState<any>(null)
@@ -23,72 +54,137 @@ export default function SettingsPage() {
   }, [])
 
   const handleLogout = async () => {
-    await fetch('/api/auth', {
-      method: 'POST',
-      body: JSON.stringify({ mode: 'logout' }),
-    })
+    await fetch('/api/auth', { method: 'POST', body: JSON.stringify({ mode: 'logout' }) })
     router.push('/')
     router.refresh()
   }
 
-  if (loading) return null
+  if (loading) return (
+    <div style={{ minHeight: '100vh', background: '#F0E6D0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Vazirmatn, sans-serif', color: '#6B7341', fontSize: 14 }}>
+      چاوەڕوان بە…
+    </div>
+  )
+
+  const username = user?.email?.split('@')[0] ?? 'بەکارهێنەر'
 
   return (
-    <div className="relative min-h-screen">
-      <Background />
-      <Navbar />
+    <div style={{
+      minHeight: '100vh', background: '#F0E6D0', color: '#1C1A17',
+      direction: 'rtl', fontFamily: 'Vazirmatn, sans-serif',
+      position: 'relative', zIndex: 1,
+    }}>
 
-      <div className="relative z-10 max-w-2xl mx-auto px-6 pt-40 pb-24">
-        <h1 className="text-4xl font-black gradient-text mb-12">ڕێکخستنەکان</h1>
+      {/* Nav */}
+      <nav style={{ borderBottom: '3px solid #1C1A17', padding: '0 48px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#EDE0C5' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Settings size={18} />
+          <span style={{ fontWeight: 800, fontSize: 17 }}>ڕێکخستنەکان</span>
+        </div>
+        <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+          <Link href="/chat" style={{ fontSize: 13, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>گفتوگۆ</Link>
+          <Link href="/" style={{ fontSize: 13, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>سەرەکی</Link>
+        </div>
+      </nav>
 
-        <div className="space-y-6">
-          {/* Profile Card */}
-          <div className="glass rounded-3xl p-8 flex items-center gap-6">
-            <div className="w-20 h-20 rounded-2xl bg-[oklch(0.30_0.04_250)] flex items-center justify-center border border-white/10">
-              <User size={40} className="text-[oklch(0.65_0.02_240)]" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-bold">{user?.email?.split('@')[0]}</h2>
-              <p className="text-[oklch(0.65_0.02_240)] text-sm">{user?.email}</p>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-bold mt-2 uppercase tracking-widest">
-                Active Session
+      <div style={{ maxWidth: 560, margin: '0 auto', padding: '56px 32px 80px' }}>
+
+        {/* Page title */}
+        <div style={{ marginBottom: 36, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <Tape />
+          <h1 style={{ fontSize: 36, fontWeight: 800, margin: 0 }}>ڕێکخستنەکان</h1>
+        </div>
+        <Squiggle color="#B5462E" />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginTop: 32 }}>
+
+          {/* Profile card */}
+          <div style={{
+            background: '#EDE0C5', border: '3px solid #1C1A17',
+            boxShadow: '-7px 7px 0 0 #1C1A17',
+            padding: '28px 24px', position: 'relative',
+            transform: 'rotate(0.3deg)',
+          }}>
+            <div style={{ position: 'absolute', top: -10, right: 32 }}><Tape /></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              {/* Avatar stamp */}
+              <Stamp label={username[0]?.toUpperCase() ?? 'ب'} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>{username}</div>
+                <div style={{ fontSize: 12, color: '#6B7341', marginBottom: 10, fontWeight: 500 }}>{user?.email}</div>
+                {/* Session badge */}
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '3px 10px', background: 'rgba(107,115,65,0.15)',
+                  border: '1.5px solid #6B7341', fontSize: 10, fontWeight: 800,
+                  color: '#6B7341', letterSpacing: '0.1em',
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#6B7341', display: 'inline-block' }} />
+                  ناستینی چالاک
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Account Info Section */}
-          <div className="glass rounded-3xl p-8 space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl glass flex items-center justify-center">
-                  <Shield size={20} className="text-[oklch(0.78_0.22_235)]" />
+          {/* Security card */}
+          <div style={{
+            background: '#F0E6D0', border: '3px solid #1C1A17',
+            boxShadow: '-7px 7px 0 0 #D4A53A',
+            padding: '24px', transform: 'rotate(-0.3deg)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 36, height: 36, border: '2.5px solid #1C1A17', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#EDE0C5' }}>
+                  <Shield size={18} />
                 </div>
                 <div>
-                  <h3 className="font-bold">ئاسایشی هەژمار</h3>
-                  <p className="text-xs text-[oklch(0.45_0.03_245)]">گۆڕینی وشەی نهێنی و پاراستن</p>
+                  <div style={{ fontWeight: 800, fontSize: 15 }}>ئاسایشی هەژمار</div>
+                  <div style={{ fontSize: 11, color: '#6B7341', fontWeight: 500, marginTop: 2 }}>گۆڕینی وشەی نهێنی و پاراستن</div>
                 </div>
               </div>
-              <button className="text-sm font-medium text-[oklch(0.78_0.22_235)] hover:underline">بەڕێوەبردن</button>
+              <button style={{
+                padding: '6px 14px', background: '#D4A53A', color: '#1C1A17',
+                border: '2px solid #1C1A17', fontFamily: 'Vazirmatn', fontWeight: 700,
+                fontSize: 12, cursor: 'pointer', boxShadow: '-3px 3px 0 0 #1C1A17',
+              }}>
+                بەڕێوەبردن
+              </button>
             </div>
-
           </div>
 
-          {/* Logout Button */}
+          <Squiggle color="#6B7341" />
+
+          {/* Logout */}
           <button
             onClick={handleLogout}
-            className="w-full glass rounded-2xl p-6 flex items-center justify-between group hover:bg-red-500/5 transition-all border-red-500/10 hover:border-red-500/30"
+            style={{
+              width: '100%', padding: '18px 24px', background: '#F0E6D0',
+              border: '3px solid #B5462E', boxShadow: '-6px 6px 0 0 #B5462E',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              cursor: 'pointer', fontFamily: 'Vazirmatn',
+              transition: 'transform 0.1s, box-shadow 0.1s',
+              transform: 'rotate(0.2deg)',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translate(-3px, 3px) rotate(0.2deg)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '-3px 3px 0 0 #B5462E' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'rotate(0.2deg)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '-6px 6px 0 0 #B5462E' }}
           >
-            <div className="flex items-center gap-4">
-               <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
-                 <LogOut size={20} />
-               </div>
-               <div className="text-right">
-                 <h3 className="font-bold text-red-400">چوونەدەرەوە</h3>
-                 <p className="text-xs text-red-500/50">داخستنی هەژمار لەم ئامێرەدا</p>
-               </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 36, height: 36, border: '2.5px solid #B5462E', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(181,70,46,0.08)' }}>
+                <LogOut size={18} color="#B5462E" />
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontWeight: 800, fontSize: 15, color: '#B5462E' }}>چوونەدەرەوە</div>
+                <div style={{ fontSize: 11, color: '#B5462E', opacity: 0.7, marginTop: 2 }}>داخستنی هەژمار لەم ئامێرەدا</div>
+              </div>
             </div>
-            <ArrowLeft size={20} className="text-red-500/30" style={{ transform: 'scaleX(-1)' }} />
+            <ArrowRight size={18} color="#B5462E" />
           </button>
+
+          {/* Back */}
+          <div style={{ textAlign: 'center', marginTop: 8 }}>
+            <Link href="/chat" style={{ fontSize: 13, color: '#6B7341', fontWeight: 600, textDecoration: 'none' }}>
+              ← گەڕانەوە بۆ گفتوگۆ
+            </Link>
+          </div>
         </div>
       </div>
     </div>
