@@ -21,8 +21,8 @@ Always maintain a friendly, professional, and intelligent tone.
 When search results are provided, use them to give accurate and up-to-date information. 
 DO NOT mention that you are searching or that you have snippets unless asked. Just provide the answer.`;
 
-// Helper to get a smart English search query from the user's Kurdish message
-async function getSearchQuery(kurdishText: string, key: string) {
+// Helper to get a smart English search query based on the FULL conversation
+async function getSearchQuery(messages: any[], key: string) {
   try {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -32,14 +32,17 @@ async function getSearchQuery(kurdishText: string, key: string) {
       },
       body: JSON.stringify({
         model: "google/gemini-2.0-flash-001",
-        messages: [{ role: "user", content: `Translate this Kurdish search query to a short, effective English search query. Only return the English text: "${kurdishText}"` }],
-        max_tokens: 20
+        messages: [
+          { role: "system", content: "You are a search query optimizer. Based on the conversation history, write a short, precise English search query to find information for the user's latest request. ONLY return the search query text." },
+          ...messages.slice(-5) // Use last 5 messages for context
+        ],
+        max_tokens: 30
       })
     });
     const data = await res.json();
-    return data.choices?.[0]?.message?.content?.trim() || kurdishText;
+    return data.choices?.[0]?.message?.content?.trim() || messages[messages.length - 1].content;
   } catch {
-    return kurdishText;
+    return messages[messages.length - 1].content;
   }
 }
 
@@ -73,8 +76,8 @@ export async function POST(req: Request) {
     let searchContext = '';
 
     if (lastUserMessage && SERPER_KEYS.length > 0 && OPENROUTER_KEYS[0]) {
-      // 1. Get English query for better results
-      const englishQuery = await getSearchQuery(lastUserMessage, OPENROUTER_KEYS[0]);
+      // 1. Get English query based on history for better context
+      const englishQuery = await getSearchQuery(messages, OPENROUTER_KEYS[0]);
       
       // 2. Perform the actual search
       const results = await performSearch(englishQuery);
