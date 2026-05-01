@@ -11,30 +11,28 @@ const SERPER_KEYS = process.env.SERPER_API_KEY ?
 const OPENROUTER_MODELS = [
   'google/gemini-2.0-flash-001',
   'meta-llama/llama-3.3-70b-instruct:free',
-  'qwen/qwen-2.5-72b-instruct:free',
-  'meta-llama/llama-3.1-8b-instruct:free'
+  'qwen/qwen-2.5-72b-instruct:free'
 ];
 
 const SYSTEM_PROMPT = `You are Shuty, the world's most advanced Kurdish AI expert. 
 Your goal is to provide helpful, natural, and accurate responses strictly in Sorani Kurdish.
-Always maintain a friendly, professional, and intelligent tone. 
-When search results are provided, use them to give accurate and up-to-date information. 
-DO NOT mention that you are searching or that you have snippets unless asked. Just provide the answer.`;
+Always maintain a friendly and professional tone.
 
-// Helper to get a smart English search query based on the FULL conversation
+CRITICAL: When search results are provided in the context below, you MUST use them to answer. 
+Even if you think you don't know, the data from Google is right in front of you. 
+Translate and summarize the search results into natural Kurdish. 
+Do not say "I don't have information" if search results are present.`;
+
 async function getSearchQuery(messages: any[], key: string) {
   try {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${key}`,
-        "Content-Type": "application/json"
-      },
+      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-2.0-flash-001",
         messages: [
-          { role: "system", content: "You are a search query optimizer. Based on the conversation history, write a short, precise English search query to find information for the user's latest request. ONLY return the search query text." },
-          ...messages.slice(-5) // Use last 5 messages for context
+          { role: "system", content: "Create a short English search query to find the exact info the user wants. Example: 'Lays ketchup chips calories 25g'. Only return the query." },
+          ...messages.slice(-3)
         ],
         max_tokens: 30
       })
@@ -53,16 +51,15 @@ async function performSearch(query: string) {
       const response = await fetch("https://google.serper.dev/search", {
         method: "POST",
         headers: { "X-API-KEY": key, "Content-Type": "application/json" },
-        body: JSON.stringify({ q: query }) 
+        body: JSON.stringify({ q: query, num: 8 }) // Get more results
       });
       if (response.ok) {
         const data = await response.json();
-        return data.organic?.slice(0, 5).map((res: any) => 
-          `Title: ${res.title}\nSnippet: ${res.snippet}`
-        ).join('\n\n');
+        const results = data.organic?.map((res: any) => `- ${res.title}: ${res.snippet}`).join('\n');
+        return results || null;
       }
     } catch (e) {
-      console.error("Search failed");
+      console.error("Search error");
     }
   }
   return null;
@@ -76,60 +73,51 @@ export async function POST(req: Request) {
     let searchContext = '';
 
     if (lastUserMessage && SERPER_KEYS.length > 0 && OPENROUTER_KEYS[0]) {
-      // 1. Get English query based on history for better context
-      const englishQuery = await getSearchQuery(messages, OPENROUTER_KEYS[0]);
-      
-      // 2. Perform the actual search
-      const results = await performSearch(englishQuery);
+      const query = await getSearchQuery(messages, OPENROUTER_KEYS[0]);
+      const results = await performSearch(query);
       if (results) {
-        searchContext = `\n\n[LATEST SEARCH RESULTS FROM GOOGLE]:\n${results}\n\nUse this data to answer the user in Kurdish.`;
+        searchContext = `\n\n[REAL-TIME GOOGLE DATA FOUND]:\n${results}\n\nINSTRUCTION: Use the data above to answer the user's question in Kurdish accurately.`;
       }
     }
 
-    if (OPENROUTER_KEYS.length > 0) {
-      for (const key of OPENROUTER_KEYS) {
-        if (responseText) break;
-        for (const model of OPENROUTER_MODELS) {
-          try {
-            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-              method: "POST",
-              headers: {
-                "Authorization": `Bearer ${key}`,
-                "HTTP-Referer": "https://shuty.ai",
-                "X-Title": "Shuty AI",
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                model: model,
-                messages: [
-                  { role: 'system', content: SYSTEM_PROMPT + (searchContext ? searchContext : "") },
-                  ...messages
-                ],
-                temperature: 0.7,
-              })
-            });
+    for (const key of OPENROUTER_KEYS) {
+      if (responseText) break;
+      for (const model of OPENROUTER_MODELS) {
+        try {
+          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${key}`,
+              "HTTP-Referer": "https://shuty.ai",
+              "X-Title": "Shuty AI",
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: model,
+              messages: [
+                { role: 'system', content: SYSTEM_PROMPT + searchContext },
+                ...messages
+              ],
+              temperature: 0.3, // Lower temperature for more factual accuracy
+            })
+          });
 
-            if (response.ok) {
-              const data = await response.json();
-              if (data.choices?.[0]?.message?.content) {
-                responseText = data.choices[0].message.content;
-                break;
-              }
-            } else if (response.status === 429) break;
-          } catch (e: any) {
-            console.error("OpenRouter error");
-          }
+          if (response.ok) {
+            const data = await response.json();
+            if (data.choices?.[0]?.message?.content) {
+              responseText = data.choices[0].message.content;
+              break;
+            }
+          } else if (response.status === 429) break;
+        } catch (e) {
+          console.error("OpenRouter error");
         }
       }
     }
 
-    if (!responseText) {
-      return NextResponse.json({ text: "ببوورە، سەرچاوەکانمان قەرەباڵغن. تکایە یەک خولەکی تر هەوڵ بدەرەوە. 😊" });
-    }
+    return NextResponse.json({ text: responseText || "ببوورە، کێشەیەک لە پەیوەندی دروست بوو." });
 
-    return NextResponse.json({ text: responseText });
-
-  } catch (error: any) {
-    return NextResponse.json({ text: "هەڵەیەک ڕوویدا. تکایە پەیجەکە نوێ بکەرەوە." });
+  } catch (error) {
+    return NextResponse.json({ text: "هەڵەیەک ڕوویدا." });
   }
 }
