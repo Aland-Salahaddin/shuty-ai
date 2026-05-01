@@ -322,11 +322,6 @@ export default function SettingsPage() {
               ← گەڕانەوە بۆ گفتوگۆ
             </Link>
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <Link href="/" style={{ fontSize: 12, color: '#B5462E', fontWeight: 600, textDecoration: 'none' }}>
-              ← گەڕانەوە بۆ سەرەکی
-            </Link>
-          </div>
         </div>
       </div>
     </div>
