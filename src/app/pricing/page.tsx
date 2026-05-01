@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { useSession } from 'next-auth/react'
 import { ArrowRight, Settings as SettingsIcon, MessageSquare } from 'lucide-react'
 
 function Squiggle({ color = '#1C1A17' }: { color?: string }) {
@@ -27,7 +27,7 @@ function Tape({ rotate = '-2deg', width = 80 }: { rotate?: string; width?: numbe
   )
 }
 
-function Stamp({ label = 'شتی', rotate = '-10deg', size = 64 }: { label?: string; rotate?: string; size?: number }) {
+function Stamp({ label = 'شوتی', rotate = '-10deg', size = 64 }: { label?: string; rotate?: string; size?: number }) {
   return (
     <svg viewBox="0 0 80 80" width={size} height={size} style={{ transform: `rotate(${rotate})`, flexShrink: 0 }}>
       <circle cx="40" cy="40" r="38" fill="none" stroke="#B5462E" strokeWidth="2.5" strokeDasharray="4 2" />
@@ -73,16 +73,9 @@ const tiers = [
 ]
 
 export default function PricingPage() {
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const supabase = createClient()
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user)
-      setLoading(false)
-    })
-  }, [])
+  const { data: session, status } = useSession()
+  const user = session?.user
+  const loading = status === 'loading'
 
   return (
     <div style={{ minHeight: '100vh', background: '#F0E6D0', color: '#1C1A17', direction: 'rtl', fontFamily: 'Vazirmatn, sans-serif', position: 'relative', zIndex: 1 }}>

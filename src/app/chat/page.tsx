@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Plus, Send, LogOut, Settings as SettingsIcon, Trash2, Edit2, Check, Menu, X } from 'lucide-react'
 import Modal from '@/components/Modal'
 import { newSessionId } from '@/lib/utils'
+import { useUser, useClerk, UserButton } from '@clerk/nextjs'
+
 
 /* Parse **bold** and *italic* markdown inline */
 function renderMarkdown(text: string) {
@@ -62,7 +64,7 @@ function Tape({ rotate = '-2deg', top = '-10px', right = '20%' }) {
   )
 }
 
-function Stamp({ label = 'شتی', rotate = '-10deg', size = 72 }) {
+function Stamp({ label = 'شوتی', rotate = '-10deg', size = 72 }) {
   return (
     <div style={{
       position: 'relative',
@@ -126,12 +128,19 @@ export default function ChatPage() {
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
+  const { user, isLoaded } = useUser()
+  const { signOut } = useClerk()
+  const authLoading = !isLoaded
+
 
   useEffect(() => {
-    const sid = newSessionId()
-    setSessionId(sid)
-    fetchSessions()
-  }, [])
+    if (user) {
+      const sid = newSessionId()
+      setSessionId(sid)
+      fetchSessions()
+    }
+  }, [user])
+
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -211,10 +220,9 @@ export default function ChatPage() {
   const startNewChat = () => { setSessionId(newSessionId()); setMessages([]) }
   const selectSession = (sid: string) => { setSessionId(sid); fetchMessages(sid) }
   const handleLogout = async () => {
-    await fetch('/api/auth', { method: 'POST', body: JSON.stringify({ mode: 'logout' }) })
-    router.push('/')
-    router.refresh()
+    await signOut({ redirectUrl: '/' })
   }
+
 
   return (
     <div style={{
@@ -229,9 +237,9 @@ export default function ChatPage() {
         background: '#EDE0C5',
         borderLeft: '3px solid #1C1A17',
         display: 'flex', flexDirection: 'column',
-        overflow: 'hidden',
+        overflow: sidebarOpen ? 'visible' : 'hidden',
         transition: 'width 0.25s ease, min-width 0.25s ease',
-        position: 'relative', zIndex: 20,
+        position: 'relative', zIndex: 50,
         flexShrink: 0,
       }}>
         {/* Logo */}
@@ -313,14 +321,29 @@ export default function ChatPage() {
 
         <Squiggle color="#6B7341" />
 
-        {/* Footer */}
+        {/* Footer / Profile */}
         <div style={{ padding: '12px 16px', borderTop: '2px solid #1C1A17' }}>
-          <button onClick={() => router.push('/settings')} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#1C1A17', fontFamily: 'Vazirmatn', fontSize: 13, marginBottom: 2 }}>
-            <SettingsIcon size={15} /> ڕێکخستن
-          </button>
-          <button onClick={handleLogout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#B5462E', fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: 700 }}>
-            <LogOut size={15} /> چوونەدەرەوە
-          </button>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '10px', background: '#F0E6D0', border: '2px solid #1C1A17',
+            boxShadow: '-4px 4px 0 0 #1C1A17',
+            cursor: 'pointer',
+            pointerEvents: 'auto'
+          }}>
+            <UserButton showName appearance={{
+              elements: {
+                userButtonBox: {
+                  gap: '12px',
+                },
+                userButtonOuterIdentifier: {
+                  fontFamily: 'Vazirmatn',
+                  fontWeight: '800',
+                  color: '#1C1A17',
+                  fontSize: '14px'
+                }
+              }
+            }} />
+          </div>
         </div>
       </div>
 
@@ -342,7 +365,7 @@ export default function ChatPage() {
             </button>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Stamp label="شتی" rotate="-8deg" size={48} />
+            <Stamp label="شوتی" rotate="-8deg" size={48} />
             <div>
               <div style={{ fontWeight: 800, fontSize: 17, color: '#1C1A17', fontFamily: 'Vazirmatn' }}>گفتوگۆ</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -362,10 +385,10 @@ export default function ChatPage() {
                 <div style={{ padding: '32px 40px', background: '#EDE0C5', border: '3px solid #1C1A17', boxShadow: '-8px 8px 0 0 #1C1A17', position: 'relative' }}>
                   <Tape top="-10px" right="25%" rotate="-3deg" />
                   <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
-                    <Stamp label="شتی" rotate="5deg" size={80} />
+                    <Stamp label="شوتی" rotate="5deg" size={80} />
                   </div>
                   <h3 style={{ fontSize: 22, fontWeight: 800, color: '#1C1A17', marginBottom: 8, fontFamily: 'Vazirmatn' }}>
-                    بەخێربێیت بۆ شتی
+                    بەخێربێیت بۆ شوتی
                   </h3>
                   <p style={{ fontSize: 13, color: '#6B7341', fontWeight: 500, fontFamily: 'Vazirmatn' }}>
                     پرسیارەکەت لێرە بنووسە…

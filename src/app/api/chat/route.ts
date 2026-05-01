@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 
 export const runtime = 'edge';
 
@@ -53,7 +54,7 @@ async function performSearch(query: string) {
       const response = await fetch("https://google.serper.dev/search", {
         method: "POST",
         headers: { "X-API-KEY": key, "Content-Type": "application/json" },
-        body: JSON.stringify({ q: query, num: 8 }) // Get more results
+        body: JSON.stringify({ q: query, num: 8 })
       });
       if (response.ok) {
         const data = await response.json();
@@ -68,6 +69,11 @@ async function performSearch(query: string) {
 }
 
 export async function POST(req: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ text: "تکایە سەرەتا بچۆ ژوورەوە." }, { status: 401 });
+  }
+
   try {
     const { messages } = await req.json();
     const lastUserMessage = messages[messages.length - 1]?.content;
@@ -86,7 +92,7 @@ export async function POST(req: Request) {
       if (responseText) break;
       for (const model of OPENROUTER_MODELS) {
         try {
-          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          const response = await fetch("https://openrouter.ai/ai/v1/chat/completions", {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${key}`,
@@ -100,7 +106,7 @@ export async function POST(req: Request) {
                 { role: 'system', content: SYSTEM_PROMPT + searchContext },
                 ...messages
               ],
-              temperature: 0.3, // Lower temperature for more factual accuracy
+              temperature: 0.3,
             })
           });
 

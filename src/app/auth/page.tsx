@@ -1,317 +1,109 @@
-'use client'
+"use client"
 
-import { useState, useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-
-function Squiggle({ color = '#1C1A17' }: { color?: string }) {
-  return (
-    <svg viewBox="0 0 200 10" style={{ width: '100%', height: 10 }}>
-      <path d="M0,5 C15,0 30,10 45,5 C60,0 75,10 90,5 C105,0 120,10 135,5 C150,0 165,10 180,5 C190,1 200,8 200,5"
-        fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function Stamp() {
-  return (
-    <svg viewBox="0 0 80 80" width={72} height={72} style={{ transform: 'rotate(-8deg)' }}>
-      <circle cx="40" cy="40" r="37" fill="none" stroke="#B5462E" strokeWidth="2.5" strokeDasharray="4 2" />
-      <circle cx="40" cy="40" r="30" fill="none" stroke="#B5462E" strokeWidth="1.5" />
-      <text x="40" y="36" textAnchor="middle" fontSize="10" fontFamily="Vazirmatn" fontWeight="700" fill="#B5462E">shuty</text>
-      <text x="40" y="50" textAnchor="middle" fontSize="10" fontFamily="Vazirmatn" fontWeight="700" fill="#B5462E">.ai</text>
-    </svg>
-  )
-}
-
-function Tape() {
-  return (
-    <div style={{
-      width: 80, height: 18, background: 'rgba(212,165,58,0.5)',
-      border: '1px solid rgba(212,165,58,0.8)',
-      transform: 'rotate(-2deg)',
-      backgroundImage: 'repeating-linear-gradient(90deg, transparent 0px, transparent 6px, rgba(255,255,255,0.25) 6px, rgba(255,255,255,0.25) 8px)',
-      boxShadow: '-2px 2px 0 0 rgba(28,26,23,0.12)',
-    }} />
-  )
-}
-
-function AuthContent() {
-  const searchParams = useSearchParams()
-  const initialMode = (searchParams.get('mode') === 'signup' ? 'signup' : 'login') as 'login' | 'signup' | 'reset'
-  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>(initialMode)
-  const [email, setEmail] = useState('')
-  const [fullName, setFullName] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [pwSent, setPwSent] = useState(false)
-  const router = useRouter()
-
-  useEffect(() => {
-    const m = searchParams.get('mode')
-    if (m === 'signup' || m === 'login') {
-      setMode(m as 'login' | 'signup')
-    }
-  }, [searchParams])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    try {
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, mode, fullName }),
-      })
-      const data = await res.json()
-      if (data.error) {
-        if (data.error.includes('Email not confirmed')) {
-          setError('ئیمەیڵەکە پشتڕاست نەکراوەتەوە. تکایە سەیری نامەی ئیمەیڵەکەت بکە.')
-        } else if (data.error.includes('Invalid login credentials')) {
-          setError('ئیمەیڵ یان وشەی نهێنی هەڵەیە.')
-        } else {
-          setError(data.error)
-        }
-      } else {
-        if (mode === 'signup') {
-          router.push('/verify')
-        } else if (mode === 'reset') {
-          setPwSent(true)
-          setError('')
-        } else {
-          router.push('/chat')
-          router.refresh()
-        }
-      }
-    } catch {
-      setError('هەڵەیەک ڕوویدا. تکایە دووبارە هەوڵ بدەرەوە.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#F0E6D0', padding: 24, direction: 'rtl', fontFamily: 'Vazirmatn, sans-serif',
-      position: 'relative', zIndex: 1,
-    }}>
-      <div style={{ width: '100%', maxWidth: 420 }}>
-
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-            <Stamp />
-          </div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: '#1C1A17', marginBottom: 8 }}>
-            بەخێربێیت بۆ shuty.ai
-          </h1>
-          <Squiggle color="#D4A53A" />
-          <p style={{ marginTop: 8, fontSize: 13, color: '#6B7341', fontWeight: 500 }}>
-            {mode === 'login' ? 'بچۆ ژوورەوە بۆ دەستپێکردن' : mode === 'signup' ? 'هەژمارێکی نوێ دروست بکە' : 'وشەی نهێنی بیرچووە؟'}
-          </p>
-        </div>
-
-        {/* Card */}
-        <div style={{
-          background: '#EDE0C5', border: '3px solid #1C1A17',
-          boxShadow: '-8px 8px 0 0 #1C1A17',
-          padding: '32px 28px', position: 'relative',
-        }}>
-          {/* Tape */}
-          <div style={{ position: 'absolute', top: -10, right: '30%', display: 'flex', gap: 12 }}>
-            <Tape />
-          </div>
-
-          {pwSent ? (
-            <div style={{
-              padding: '24px 16px', background: 'rgba(107,115,65,0.1)',
-              border: '2px solid #6B7341', color: '#1C1A17',
-              fontSize: 14, marginBottom: 20, fontWeight: 600, textAlign: 'center',
-              boxShadow: '-4px 4px 0 0 #6B7341',
-            }}>
-              نامەیەک بۆ گۆڕینی وشەی نهێنی نێردرا! ✓<br/>
-              <span style={{ fontSize: 12, opacity: 0.8, marginTop: 8, display: 'block' }}>تکایە سەیری ئیمەیڵەکەت بکە.</span>
-            </div>
-          ) : (
-            <>
-              {error && (
-                <div style={{
-                  padding: '12px 16px', background: 'rgba(181,70,46,0.1)',
-                  border: '2px solid #B5462E', color: '#B5462E',
-                  fontSize: 13, marginBottom: 20, fontWeight: 600, textAlign: 'center',
-                  boxShadow: '-3px 3px 0 0 #B5462E',
-                }}>
-                  {error}
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                {/* Full Name (Signup Only) */}
-                {mode === 'signup' && (
-                  <div>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1C1A17', marginBottom: 6 }}>
-                      ناوی تەواو
-                    </label>
-                    <input
-                      type="text"
-                      value={fullName}
-                      onChange={e => setFullName(e.target.value)}
-                      placeholder="ناوێک بنووسە"
-                      required
-                      style={{
-                        width: '100%', padding: '12px 14px',
-                        background: '#F0E6D0', border: '2.5px solid #1C1A17',
-                        fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17',
-                        outline: 'none',
-                      }}
-                    />
-                  </div>
-                )}
-
-                {/* Email */}
-                <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1C1A17', marginBottom: 6 }}>
-                    ئیمەیڵ
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="name@example.com"
-                    required
-                    style={{
-                      width: '100%', padding: '12px 14px',
-                      background: '#F0E6D0', border: '2.5px solid #1C1A17',
-                      fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17',
-                      outline: 'none', boxSizing: 'border-box',
-                      transition: 'box-shadow 0.15s',
-                    }}
-                    onFocus={e => e.target.style.boxShadow = '-3px 3px 0 0 #D4A53A'}
-                    onBlur={e => e.target.style.boxShadow = 'none'}
-                  />
-                </div>
-
-                {/* Password (Hide for reset) */}
-                {mode !== 'reset' && (
-                  <div>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1C1A17', marginBottom: 6 }}>
-                      وشەی نهێنی
-                    </label>
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      required={mode !== 'reset'}
-                      minLength={6}
-                      style={{
-                        width: '100%', padding: '12px 14px',
-                        background: '#F0E6D0', border: '2.5px solid #1C1A17',
-                        fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17',
-                        outline: 'none', boxSizing: 'border-box',
-                        transition: 'box-shadow 0.15s',
-                      }}
-                      onFocus={e => e.target.style.boxShadow = '-3px 3px 0 0 #D4A53A'}
-                      onBlur={e => e.target.style.boxShadow = 'none'}
-                    />
-                    {mode === 'login' && (
-                      <div style={{ textAlign: 'left', marginTop: 8 }}>
-                        <button
-                          type="button"
-                          onClick={() => setMode('reset')}
-                          style={{
-                            background: 'none', border: 'none', cursor: 'pointer',
-                            color: '#6B7341', fontSize: 12, fontWeight: 700,
-                            padding: 0, textDecoration: 'underline'
-                          }}
-                        >
-                          وشەی نهێنیم بیرچووە؟
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Submit */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    width: '100%', padding: '14px', marginTop: 4,
-                    background: loading ? '#C8A882' : '#B5462E',
-                    color: '#F0E6D0', border: '2.5px solid #1C1A17',
-                    fontFamily: 'Vazirmatn', fontWeight: 800, fontSize: 16,
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    boxShadow: loading ? 'none' : '-5px 5px 0 0 #1C1A17',
-                    transition: 'transform 0.1s, box-shadow 0.1s',
-                  }}
-                  onMouseEnter={e => { if (!loading) { (e.target as HTMLButtonElement).style.transform = 'translate(-3px, 3px)'; (e.target as HTMLButtonElement).style.boxShadow = '-2px 2px 0 0 #1C1A17' } }}
-                  onMouseLeave={e => { (e.target as HTMLButtonElement).style.transform = 'none'; (e.target as HTMLButtonElement).style.boxShadow = loading ? 'none' : '-5px 5px 0 0 #1C1A17' }}
-                >
-                  {loading ? 'چاوەڕوان بە...' : mode === 'login' ? 'چوونەژوورەوە' : mode === 'signup' ? 'تۆمارکردن' : 'ناردنی لینکی گۆڕین'}
-                </button>
-              </form>
-            </>
-          )}
-
-          {/* Squiggle divider */}
-          <div style={{ margin: '20px 0' }}>
-            <Squiggle color="#6B7341" />
-          </div>
-
-          {/* Mode toggle */}
-          <div style={{ textAlign: 'center' }}>
-            {mode === 'reset' ? (
-              <button
-                onClick={() => setMode('login')}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: '#B5462E', fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: 700,
-                  textDecoration: 'underline', textDecorationStyle: 'wavy',
-                }}
-              >
-                گەڕانەوە بۆ چوونەژوورەوە
-              </button>
-            ) : (
-              <button
-                onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: '#B5462E', fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: 700,
-                  textDecoration: 'underline', textDecorationStyle: 'wavy',
-                }}
-              >
-                {mode === 'login' ? 'هێشتا هەژمارت نییە؟ تۆمار بە' : 'پێشتر هەژمارت دروست کردووە؟ بچۆ ژوورەوە'}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Back link */}
-        <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <Link href="/" style={{
-            fontSize: 13, color: '#6B7341', fontWeight: 600, textDecoration: 'none',
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-          }}>
-            ← گەڕانەوە بۆ سەرەکی
-          </Link>
-        </div>
-      </div>
-    </div>
-  )
-}
+import { SignIn } from '@clerk/nextjs'
 
 export default function AuthPage() {
   return (
-    <Suspense fallback={
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0E6D0' }}>
-        <p style={{ fontFamily: 'Vazirmatn', fontWeight: 700 }}>چاوەڕوان بە...</p>
+    <div style={{
+      minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center',
+      padding: '40px 20px', background: '#F0E6D0',
+    }}>
+      {/* Logo */}
+      <div style={{ marginBottom: 40, textAlign: 'center' }}>
+        <div style={{
+          width: 60, height: 60, borderRadius: '50%', background: '#B5462E',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
+          border: '3px solid #1C1A17', color: '#F0E6D0', fontSize: 14, fontWeight: 900,
+          boxShadow: '4px 4px 0 #1C1A17',
+        }}>
+          shuty
+          .ai
+        </div>
+        <h1 style={{ fontSize: 32, fontWeight: 900, color: '#1C1A17', margin: 0, letterSpacing: '-1px', fontFamily: 'Vazirmatn' }}>
+          بەخێربێیت بۆ shuty.ai
+        </h1>
       </div>
-    }>
-      <AuthContent />
-    </Suspense>
+
+      <SignIn 
+        appearance={{
+          elements: {
+            rootBox: {
+              width: '100%',
+              maxWidth: '420px',
+            },
+            card: {
+              backgroundColor: '#F0E6D0',
+              border: '3.5px solid #1C1A17',
+              boxShadow: '12px 12px 0 #1C1A17',
+              borderRadius: '0',
+              padding: '20px',
+            },
+            headerTitle: {
+              color: '#1C1A17',
+              fontFamily: 'Vazirmatn',
+              fontWeight: '900',
+            },
+            headerSubtitle: {
+              color: '#1C1A17',
+              fontFamily: 'Vazirmatn',
+              opacity: '0.7',
+            },
+            formButtonPrimary: {
+              backgroundColor: '#B5462E',
+              border: '3px solid #1C1A17',
+              borderRadius: '0',
+              boxShadow: '4px 4px 0 #1C1A17',
+              fontSize: '16px',
+              fontWeight: '900',
+              fontFamily: 'Vazirmatn',
+              '&:hover': {
+                backgroundColor: '#9a3b27',
+              },
+              '&:active': {
+                transform: 'translate(2px, 2px)',
+                boxShadow: '2px 2px 0 #1C1A17',
+              }
+            },
+            formFieldLabel: {
+              color: '#1C1A17',
+              fontFamily: 'Vazirmatn',
+              fontWeight: '700',
+            },
+            formFieldInput: {
+              backgroundColor: '#F0E6D0',
+              border: '2.5px solid #1C1A17',
+              borderRadius: '0',
+              fontFamily: 'Vazirmatn',
+              '&:focus': {
+                border: '2.5px solid #B5462E',
+                boxShadow: 'none',
+              }
+            },
+            footerActionLink: {
+              color: '#B5462E',
+              fontWeight: '700',
+              '&:hover': {
+                color: '#9a3b27',
+              }
+            },
+            identityPreviewText: {
+              color: '#1C1A17',
+            },
+            identityPreviewEditButtonIcon: {
+              color: '#B5462E',
+            }
+          }
+        }}
+        signUpUrl="/auth"
+        forceRedirectUrl="/chat"
+      />
+
+      <a href="/" style={{
+        marginTop: 30, color: '#1C1A17', textDecoration: 'none', fontSize: 13,
+        fontWeight: 600, opacity: 0.6, fontFamily: 'Vazirmatn'
+      }}>
+        ← گەڕانەوە بۆ سەرەکی
+      </a>
+    </div>
   )
 }

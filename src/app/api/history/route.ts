@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchRecentMessages, fetchSessions, deleteSession, renameSession, initD1Schema } from '@/lib/d1'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 
 export const runtime = 'edge';
 
 export async function GET(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Initialize tables if needed
   await initD1Schema().catch(console.error)
@@ -17,35 +16,33 @@ export async function GET(req: NextRequest) {
   const type = searchParams.get('type') ?? 'messages'
 
   if (type === 'sessions') {
-    const sessions = await fetchSessions(user.id)
+    const sessions = await fetchSessions(userId)
     return NextResponse.json({ sessions })
   }
 
-  const messages = await fetchRecentMessages(user.id, sessionId, 50)
+  const messages = await fetchRecentMessages(userId, sessionId, 50)
   return NextResponse.json({ messages })
 }
 
 export async function DELETE(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
   const sessionId = searchParams.get('session_id')
   if (!sessionId) return NextResponse.json({ error: 'Missing session_id' }, { status: 400 })
 
-  await deleteSession(sessionId, user.id)
+  await deleteSession(sessionId, userId)
   return NextResponse.json({ success: true })
 }
 
 export async function PATCH(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { sessionId, title } = await req.json()
   if (!sessionId || !title) return NextResponse.json({ error: 'Missing data' }, { status: 400 })
 
-  await renameSession(sessionId, user.id, title)
+  await renameSession(sessionId, userId, title)
   return NextResponse.json({ success: true })
 }

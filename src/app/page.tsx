@@ -1,5 +1,8 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { Show, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs"
+
+
 
 export const metadata: Metadata = {
   title: 'shuty.ai — زیرەکی دەستکرد بە کوردی',
@@ -19,7 +22,7 @@ function Squiggle({ color = '#1C1A17' }: { color?: string }) {
   )
 }
 
-function Stamp({ label = 'شتی', rotate = '-10deg', size = 80 }: { label?: string; rotate?: string; size?: number }) {
+function Stamp({ label = 'شوتی', rotate = '-10deg', size = 80 }: { label?: string; rotate?: string; size?: number }) {
   return (
     <svg viewBox="0 0 80 80" width={size} height={size} style={{ transform: `rotate(${rotate})`, flexShrink: 0 }}>
       <circle cx="40" cy="40" r="38" fill="none" stroke="#B5462E" strokeWidth="2.5" strokeDasharray="4 2" />
@@ -64,19 +67,40 @@ export default function HomePage() {
         <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.5px' }}>shuty.ai</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
           <Link href="/pricing" style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>نرخەکان</Link>
-          <Link href="/auth?mode=login" style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>چوونەژوورەوە</Link>
-          <Link
-            href="/auth?mode=signup"
-            style={{
-              padding: '8px 20px', background: '#B5462E', color: '#F0E6D0',
-              border: '2px solid #1C1A17', fontWeight: 700, fontSize: 14,
-              textDecoration: 'none', boxShadow: '-4px 4px 0 0 #1C1A17',
-              display: 'inline-block', transition: 'transform 0.1s, box-shadow 0.1s',
-            }}
-          >
-            دەستپێکردن
-          </Link>
+          <Show when="signed-out">
+            <SignInButton mode="modal">
+              <button style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>چوونەژوورەوە</button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <button
+                style={{
+                  padding: '8px 20px', background: '#B5462E', color: '#F0E6D0',
+                  border: '2px solid #1C1A17', fontWeight: 700, fontSize: 14,
+                  boxShadow: '-4px 4px 0 0 #1C1A17',
+                  cursor: 'pointer', transition: 'transform 0.1s, box-shadow 0.1s',
+                  fontFamily: 'inherit'
+                }}
+              >
+                دەستپێکردن
+              </button>
+            </SignUpButton>
+          </Show>
+          <Show when="signed-in">
+            <Link href="/chat"
+              style={{
+                padding: '8px 24px', background: '#D4A53A', color: '#1C1A17',
+                border: '2px solid #1C1A17', fontWeight: 800, fontSize: 14,
+                boxShadow: '-4px 4px 0 0 #1C1A17',
+                textDecoration: 'none', transition: 'transform 0.1s, box-shadow 0.1s',
+                display: 'flex', alignItems: 'center', gap: 8
+              }}
+            >
+              چوونە ناو چات ←
+            </Link>
+          </Show>
+
         </div>
+
       </nav>
 
       {/* ── HERO ─────────────────────────────────────────── */}
@@ -133,7 +157,7 @@ export default function HomePage() {
           </div>
           {/* Stamp decoration */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, paddingTop: 16 }}>
-            <Stamp label="شتی" rotate="-8deg" size={100} />
+            <Stamp label="شوتی" rotate="-8deg" size={100} />
             <Stamp label="کوردی" rotate="5deg" size={72} />
           </div>
         </div>
@@ -195,7 +219,7 @@ export default function HomePage() {
         }}>
           <Tape rotate="-2deg" width={80} />
           <div style={{ position: 'absolute', top: 16, left: 20 }}>
-            <Stamp label="شتی" rotate="-12deg" size={72} />
+            <Stamp label="شوتی" rotate="-12deg" size={72} />
           </div>
           <h2 style={{ fontSize: 28, fontWeight: 800, marginBottom: 12 }}>زمانی کوردی شایانی زیرەکییەکی شایستەیە.</h2>
           <Squiggle color="#B5462E" />
