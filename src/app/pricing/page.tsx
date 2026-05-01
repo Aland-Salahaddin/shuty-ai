@@ -74,10 +74,14 @@ const tiers = [
 
 export default function PricingPage() {
   const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user))
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user)
+      setLoading(false)
+    })
   }, [])
 
   return (
@@ -87,22 +91,24 @@ export default function PricingPage() {
       <nav style={{ borderBottom: '3px solid #1C1A17', padding: '0 48px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#EDE0C5' }}>
         <div style={{ fontWeight: 800, fontSize: 20 }}>shuty.ai</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-          {user ? (
-            <>
-              <Link href="/chat" style={{ fontSize: 14, fontWeight: 700, color: '#1C1A17', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <MessageSquare size={16} /> گفتوگۆ
-              </Link>
-              <Link href="/settings" style={{ fontSize: 14, fontWeight: 700, color: '#1C1A17', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <SettingsIcon size={16} /> ڕێکخستنەکان
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link href="/" style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>سەرەکی</Link>
-              <Link href="/auth" style={{ padding: '8px 20px', background: '#B5462E', color: '#F0E6D0', border: '2px solid #1C1A17', fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '-4px 4px 0 0 #1C1A17', display: 'inline-block' }}>
-                چوونەژوورەوە
-              </Link>
-            </>
+          {!loading && (
+            user ? (
+              <>
+                <Link href="/chat" style={{ fontSize: 14, fontWeight: 700, color: '#1C1A17', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <MessageSquare size={16} /> گفتوگۆ
+                </Link>
+                <Link href="/settings" style={{ fontSize: 14, fontWeight: 700, color: '#1C1A17', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <SettingsIcon size={16} /> ڕێکخستنەکان
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/" style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>سەرەکی</Link>
+                <Link href="/auth" style={{ padding: '8px 20px', background: '#B5462E', color: '#F0E6D0', border: '2px solid #1C1A17', fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '-4px 4px 0 0 #1C1A17', display: 'inline-block' }}>
+                  چوونەژوورەوە
+                </Link>
+              </>
+            )
           )}
         </div>
       </nav>
