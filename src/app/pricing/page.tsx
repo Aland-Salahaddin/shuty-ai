@@ -67,7 +67,7 @@ const tiers = [
       'بەدەستهێنانی API Key',
     ],
     cta: 'بەدەستهێنانی Pro',
-    href: '/auth',
+    href: '/auth?mode=signup',
     featured: true,
   },
 ]
@@ -104,7 +104,7 @@ export default function PricingPage() {
             ) : (
               <>
                 <Link href="/" style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>سەرەکی</Link>
-                <Link href="/auth" style={{ padding: '8px 20px', background: '#B5462E', color: '#F0E6D0', border: '2px solid #1C1A17', fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '-4px 4px 0 0 #1C1A17', display: 'inline-block' }}>
+                <Link href="/auth?mode=login" style={{ padding: '8px 20px', background: '#B5462E', color: '#F0E6D0', border: '2px solid #1C1A17', fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '-4px 4px 0 0 #1C1A17', display: 'inline-block' }}>
                   چوونەژوورەوە
                 </Link>
               </>

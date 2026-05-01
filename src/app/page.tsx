@@ -64,9 +64,9 @@ export default function HomePage() {
         <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.5px' }}>shuty.ai</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
           <Link href="/pricing" style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>نرخەکان</Link>
-          <Link href="/auth" style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>چوونەژوورەوە</Link>
+          <Link href="/auth?mode=login" style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>چوونەژوورەوە</Link>
           <Link
-            href="/chat"
+            href="/auth?mode=signup"
             style={{
               padding: '8px 20px', background: '#B5462E', color: '#F0E6D0',
               border: '2px solid #1C1A17', fontWeight: 700, fontSize: 14,
@@ -108,7 +108,7 @@ export default function HomePage() {
             </p>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
               <Link
-                href="/chat"
+                href="/auth?mode=signup"
                 style={{
                   padding: '14px 32px', background: '#B5462E', color: '#F0E6D0',
                   border: '3px solid #1C1A17', fontWeight: 800, fontSize: 16,
@@ -201,7 +201,7 @@ export default function HomePage() {
           <Squiggle color="#B5462E" />
           <div style={{ marginTop: 28 }}>
             <Link
-              href="/auth"
+              href="/auth?mode=signup"
               style={{
                 padding: '14px 36px', background: '#D4A53A', color: '#1C1A17',
                 border: '3px solid #1C1A17', fontWeight: 800, fontSize: 16,

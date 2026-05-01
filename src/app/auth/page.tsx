@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 function Squiggle({ color = '#1C1A17' }: { color?: string }) {
@@ -37,13 +37,22 @@ function Tape() {
 }
 
 export default function AuthPage() {
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const searchParams = useSearchParams()
+  const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login'
+  const [mode, setMode] = useState<'login' | 'signup'>(initialMode)
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+
+  useEffect(() => {
+    const m = searchParams.get('mode')
+    if (m === 'signup' || m === 'login') {
+      setMode(m as 'login' | 'signup')
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
