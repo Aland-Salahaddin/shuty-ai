@@ -159,7 +159,7 @@ function AuthContent() {
                       type="text"
                       value={fullName}
                       onChange={e => setFullName(e.target.value)}
-                      placeholder="ناو و پاشnaوت بنووسە"
+                      placeholder="ناوێک بنووسە"
                       required
                       style={{
                         width: '100%', padding: '12px 14px',
