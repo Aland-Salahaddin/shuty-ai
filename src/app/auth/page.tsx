@@ -39,6 +39,7 @@ function Tape() {
 export default function AuthPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
+  const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -52,7 +53,7 @@ export default function AuthPage() {
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, mode }),
+        body: JSON.stringify({ email, password, mode, fullName }),
       })
       const data = await res.json()
       if (data.error) {
@@ -123,6 +124,28 @@ export default function AuthPage() {
           )}
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* Full Name (Signup Only) */}
+            {mode === 'signup' && (
+              <div>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1C1A17', marginBottom: 6 }}>
+                  ناوی تەواو
+                </label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={e => setFullName(e.target.value)}
+                  placeholder="ناو و پاشناوت بنووسە"
+                  required
+                  style={{
+                    width: '100%', padding: '12px 14px',
+                    background: '#F0E6D0', border: '2.5px solid #1C1A17',
+                    fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+            )}
+
             {/* Email */}
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1C1A17', marginBottom: 6 }}>
