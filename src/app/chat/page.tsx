@@ -154,6 +154,7 @@ export default function ChatPage() {
     try {
       const res = await fetch('/api/history?type=sessions')
       const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to load sessions");
       if (data.sessions) setSessions(data.sessions)
     } catch {}
   }
@@ -179,6 +180,14 @@ export default function ChatPage() {
         body: JSON.stringify({ messages: [...messages, userMsg], sessionId }),
       })
       const data = await res.json()
+      if (!res.ok) {
+        if (data.error === "LIMIT_REACHED") {
+          const limitMsg: Message = { role: 'assistant', content: data.message || "تۆ سنووری پەیامەکانی ئەمڕۆت تەواو کردووە. بۆ بەردەوامبوون هەژمارەکەت بکە بە Pro." };
+          setMessages(prev => [...prev, limitMsg]);
+          return;
+        }
+        throw new Error(data.error || "Failed to send");
+      }
       if (data.text) setMessages(prev => [...prev, { role: 'assistant', content: data.text }])
       fetchSessions()
     } catch {

@@ -39,6 +39,8 @@ function Stamp({ label = 'شوتی', rotate = '-10deg', size = 64 }: { label?: s
   )
 }
 
+import { SHUTY_CONFIG } from '@/lib/shuty-config'
+
 const tiers = [
   {
     name: 'خۆڕایی',
@@ -47,13 +49,14 @@ const tiers = [
     description: 'بۆ بەکارهێنانی سەرەتایی و تاقیکردنەوە',
     features: [
       'دەستڕاگەیشتن بە مۆدێلی سەرەتایی',
-      '١٠ پەیام لە ڕۆژێکدا',
+      `${SHUTY_CONFIG.FREE.maxMessagesPerDay} پەیام لە ڕۆژێکدا`,
       'گەڕانی ئینتەرنێت',
       'پشتیوانی کۆمەڵایەتی',
     ],
     cta: 'دەستپێکردنی بێبەرامبەر',
     href: '/chat',
     featured: false,
+    planKey: 'FREE'
   },
   {
     name: 'Pro',
@@ -71,11 +74,13 @@ const tiers = [
     cta: 'بەدەستهێنانی Pro',
     href: '/auth?mode=signup',
     featured: true,
+    planKey: 'PRO'
   },
 ]
 
 export default function PricingPage() {
   const { user, isLoaded } = useUser()
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
   const loading = !isLoaded
 
   return (
@@ -191,25 +196,79 @@ export default function PricingPage() {
             </ul>
 
             {/* CTA */}
-            <Link
-              href={user ? (tier.name === 'Pro' ? '/settings' : '/chat') : tier.href}
-              style={{
-                display: 'block', textAlign: 'center',
-                padding: '14px 20px',
-                background: tier.featured ? '#B5462E' : '#D4A53A',
-                color: tier.featured ? '#F0E6D0' : '#1C1A17',
-                border: '2.5px solid #1C1A17',
-                fontWeight: 800, fontSize: 15,
-                textDecoration: 'none',
-                boxShadow: '-5px 5px 0 0 #1C1A17',
-                transition: 'transform 0.1s, box-shadow 0.1s',
-              }}
-            >
-              {tier.cta}
-            </Link>
+            {user && tier.name === 'Pro' ? (
+              <button
+                onClick={() => setShowPaymentModal(true)}
+                style={{
+                  display: 'block', textAlign: 'center', width: '100%',
+                  padding: '14px 20px',
+                  background: '#B5462E',
+                  color: '#F0E6D0',
+                  border: '2.5px solid #1C1A17',
+                  fontWeight: 800, fontSize: 15,
+                  cursor: 'pointer',
+                  boxShadow: '-5px 5px 0 0 #1C1A17',
+                  transition: 'transform 0.1s',
+                  fontFamily: 'Vazirmatn'
+                }}
+                className="press-effect"
+              >
+                {tier.cta}
+              </button>
+            ) : (
+              <Link
+                href={user ? '/chat' : tier.href}
+                style={{
+                  display: 'block', textAlign: 'center',
+                  padding: '14px 20px',
+                  background: tier.featured ? '#B5462E' : '#D4A53A',
+                  color: tier.featured ? '#F0E6D0' : '#1C1A17',
+                  border: '2.5px solid #1C1A17',
+                  fontWeight: 800, fontSize: 15,
+                  textDecoration: 'none',
+                  boxShadow: '-5px 5px 0 0 #1C1A17',
+                  transition: 'transform 0.1s, box-shadow 0.1s',
+                }}
+              >
+                {tier.cta}
+              </Link>
+            )}
           </div>
         ))}
       </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(28,26,23,0.8)', zIndex: 100,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+        }}>
+          <div style={{
+            maxWidth: 500, width: '100%', background: '#F0E6D0',
+            border: '4px solid #1C1A17', boxShadow: '-12px 12px 0 0 #1C1A17',
+            padding: 32, position: 'relative'
+          }}>
+             <button onClick={() => setShowPaymentModal(false)} style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#1C1A17' }}>✕</button>
+             <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 16 }}>{SHUTY_CONFIG.paymentInstructions.title}</h2>
+             <Squiggle color="#B5462E" />
+             <p style={{ marginTop: 20, fontSize: 14, color: '#1C1A17', lineHeight: 1.6 }}>{SHUTY_CONFIG.paymentInstructions.message}</p>
+             
+             <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {SHUTY_CONFIG.paymentInstructions.methods.map(m => (
+                  <div key={m.name} style={{ background: '#EDE0C5', border: '2px solid #1C1A17', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 800 }}>{m.name}:</span>
+                    <span style={{ fontWeight: 600, color: '#B5462E' }}>{m.detail}</span>
+                  </div>
+                ))}
+             </div>
+
+             <div style={{ marginTop: 24, padding: '12px', background: 'rgba(107,115,65,0.1)', border: '2px dashed #6B7341', textAlign: 'center' }}>
+                <p style={{ fontSize: 13, color: '#6B7341', margin: 0 }}>پەیوەندی بکە: <strong>{SHUTY_CONFIG.paymentInstructions.supportContact}</strong></p>
+             </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer note */}
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 48px 64px', textAlign: 'center' }}>
