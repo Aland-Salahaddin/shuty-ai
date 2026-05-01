@@ -19,6 +19,7 @@
     "next": "15.5.7",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "resend": "^6.12.2",
     "uuid": "^14.0.0"
   },
   "devDependencies": {

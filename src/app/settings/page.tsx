@@ -78,14 +78,26 @@ export default function SettingsPage() {
     }
     setPwLoading(true)
     const { error } = await supabase.auth.updateUser({ password: newPw })
-    setPwLoading(false)
     if (error) {
+      setPwLoading(false)
       setPwMsg({ text: `هەڵە: ${error.message}`, ok: false })
     } else {
-      setPwMsg({ text: 'وشەی نهێنی بەسەرکەوتوویی گۆڕدرا! ✓', ok: true })
+      // Trigger email notification
+      try {
+        await fetch('/api/notify-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: user.email }),
+        })
+      } catch (err) {
+        console.error('Failed to send notification email:', err)
+      }
+
+      setPwLoading(false)
+      setPwMsg({ text: 'وشەی نهێنی گۆڕدرا و ئیمەیڵی دڵنیایی نێردرا! ✓', ok: true })
       setNewPw('')
       setConfirmPw('')
-      setTimeout(() => { setPwOpen(false); setPwMsg(null) }, 2000)
+      setTimeout(() => { setPwOpen(false); setPwMsg(null) }, 3000)
     }
   }
 
