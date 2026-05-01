@@ -1,10 +1,9 @@
-import Link from 'next/link'
-import type { Metadata } from 'next'
+'use client'
 
-export const metadata: Metadata = {
-  title: 'نرخەکان — shuty.ai',
-  description: 'پلانەکانی shuty.ai بۆ بەکارهێنەرانی کوردی',
-}
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+import { ArrowRight, Settings as SettingsIcon, MessageSquare } from 'lucide-react'
 
 function Squiggle({ color = '#1C1A17' }: { color?: string }) {
   return (
@@ -74,6 +73,13 @@ const tiers = [
 ]
 
 export default function PricingPage() {
+  const [user, setUser] = useState<any>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user))
+  }, [])
+
   return (
     <div style={{ minHeight: '100vh', background: '#F0E6D0', color: '#1C1A17', direction: 'rtl', fontFamily: 'Vazirmatn, sans-serif', position: 'relative', zIndex: 1 }}>
 
@@ -81,11 +87,23 @@ export default function PricingPage() {
       <nav style={{ borderBottom: '3px solid #1C1A17', padding: '0 48px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#EDE0C5' }}>
         <div style={{ fontWeight: 800, fontSize: 20 }}>shuty.ai</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-          <Link href="/" style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>سەرەکی</Link>
-          <Link href="/chat" style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>گفتوگۆ</Link>
-          <Link href="/auth" style={{ padding: '8px 20px', background: '#B5462E', color: '#F0E6D0', border: '2px solid #1C1A17', fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '-4px 4px 0 0 #1C1A17', display: 'inline-block' }}>
-            چوونەژوورەوە
-          </Link>
+          {user ? (
+            <>
+              <Link href="/chat" style={{ fontSize: 14, fontWeight: 700, color: '#1C1A17', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <MessageSquare size={16} /> گفتوگۆ
+              </Link>
+              <Link href="/settings" style={{ fontSize: 14, fontWeight: 700, color: '#1C1A17', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <SettingsIcon size={16} /> ڕێکخستنەکان
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link href="/" style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>سەرەکی</Link>
+              <Link href="/auth" style={{ padding: '8px 20px', background: '#B5462E', color: '#F0E6D0', border: '2px solid #1C1A17', fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '-4px 4px 0 0 #1C1A17', display: 'inline-block' }}>
+                چوونەژوورەوە
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -174,7 +192,7 @@ export default function PricingPage() {
 
             {/* CTA */}
             <Link
-              href={tier.href}
+              href={user ? (tier.name === 'Pro' ? '/settings' : '/chat') : tier.href}
               style={{
                 display: 'block', textAlign: 'center',
                 padding: '14px 20px',
