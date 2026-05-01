@@ -38,13 +38,14 @@ function Tape() {
 
 function AuthContent() {
   const searchParams = useSearchParams()
-  const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login'
-  const [mode, setMode] = useState<'login' | 'signup'>(initialMode)
+  const initialMode = (searchParams.get('mode') === 'signup' ? 'signup' : 'login') as 'login' | 'signup' | 'reset'
+  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>(initialMode)
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [pwSent, setPwSent] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -76,6 +77,9 @@ function AuthContent() {
       } else {
         if (mode === 'signup') {
           router.push('/verify')
+        } else if (mode === 'reset') {
+          setPwSent(true)
+          setError('')
         } else {
           router.push('/chat')
           router.refresh()
@@ -106,7 +110,7 @@ function AuthContent() {
           </h1>
           <Squiggle color="#D4A53A" />
           <p style={{ marginTop: 8, fontSize: 13, color: '#6B7341', fontWeight: 500 }}>
-            {mode === 'login' ? 'بچۆ ژوورەوە بۆ دەستپێکردن' : 'هەژمارێکی نوێ دروست بکە'}
+            {mode === 'login' ? 'بچۆ ژوورەوە بۆ دەستپێکردن' : mode === 'signup' ? 'هەژمارێکی نوێ دروست بکە' : 'وشەی نهێنی بیرچووە؟'}
           </p>
         </div>
 
@@ -121,106 +125,137 @@ function AuthContent() {
             <Tape />
           </div>
 
-          {error && (
+          {pwSent ? (
             <div style={{
-              padding: '12px 16px', background: 'rgba(181,70,46,0.1)',
-              border: '2px solid #B5462E', color: '#B5462E',
-              fontSize: 13, marginBottom: 20, fontWeight: 600, textAlign: 'center',
-              boxShadow: '-3px 3px 0 0 #B5462E',
+              padding: '24px 16px', background: 'rgba(107,115,65,0.1)',
+              border: '2px solid #6B7341', color: '#1C1A17',
+              fontSize: 14, marginBottom: 20, fontWeight: 600, textAlign: 'center',
+              boxShadow: '-4px 4px 0 0 #6B7341',
             }}>
-              {error}
+              نامەیەک بۆ گۆڕینی وشەی نهێنی نێردرا! ✓<br/>
+              <span style={{ fontSize: 12, opacity: 0.8, marginTop: 8, display: 'block' }}>تکایە سەیری ئیمەیڵەکەت بکە.</span>
             </div>
-          )}
+          ) : (
+            <>
+              {error && (
+                <div style={{
+                  padding: '12px 16px', background: 'rgba(181,70,46,0.1)',
+                  border: '2px solid #B5462E', color: '#B5462E',
+                  fontSize: 13, marginBottom: 20, fontWeight: 600, textAlign: 'center',
+                  boxShadow: '-3px 3px 0 0 #B5462E',
+                }}>
+                  {error}
+                </div>
+              )}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {/* Full Name (Signup Only) */}
-            {mode === 'signup' && (
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1C1A17', marginBottom: 6 }}>
-                  ناوی تەواو
-                </label>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={e => setFullName(e.target.value)}
-                  placeholder="ناو و پاشناوت بنووسە"
-                  required
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {/* Full Name (Signup Only) */}
+                {mode === 'signup' && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1C1A17', marginBottom: 6 }}>
+                      ناوی تەواو
+                    </label>
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={e => setFullName(e.target.value)}
+                      placeholder="ناو و پاشnaوت بنووسە"
+                      required
+                      style={{
+                        width: '100%', padding: '12px 14px',
+                        background: '#F0E6D0', border: '2.5px solid #1C1A17',
+                        fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Email */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1C1A17', marginBottom: 6 }}>
+                    ئیمەیڵ
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    required
+                    style={{
+                      width: '100%', padding: '12px 14px',
+                      background: '#F0E6D0', border: '2.5px solid #1C1A17',
+                      fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17',
+                      outline: 'none', boxSizing: 'border-box',
+                      transition: 'box-shadow 0.15s',
+                    }}
+                    onFocus={e => e.target.style.boxShadow = '-3px 3px 0 0 #D4A53A'}
+                    onBlur={e => e.target.style.boxShadow = 'none'}
+                  />
+                </div>
+
+                {/* Password (Hide for reset) */}
+                {mode !== 'reset' && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1C1A17', marginBottom: 6 }}>
+                      وشەی نهێنی
+                    </label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required={mode !== 'reset'}
+                      minLength={6}
+                      style={{
+                        width: '100%', padding: '12px 14px',
+                        background: '#F0E6D0', border: '2.5px solid #1C1A17',
+                        fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17',
+                        outline: 'none', boxSizing: 'border-box',
+                        transition: 'box-shadow 0.15s',
+                      }}
+                      onFocus={e => e.target.style.boxShadow = '-3px 3px 0 0 #D4A53A'}
+                      onBlur={e => e.target.style.boxShadow = 'none'}
+                    />
+                    {mode === 'login' && (
+                      <div style={{ textAlign: 'left', marginTop: 8 }}>
+                        <button
+                          type="button"
+                          onClick={() => setMode('reset')}
+                          style={{
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            color: '#6B7341', fontSize: 12, fontWeight: 700,
+                            padding: 0, textDecoration: 'underline'
+                          }}
+                        >
+                          وشەی نهێنیم بیرچووە؟
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={loading}
                   style={{
-                    width: '100%', padding: '12px 14px',
-                    background: '#F0E6D0', border: '2.5px solid #1C1A17',
-                    fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17',
-                    outline: 'none',
+                    width: '100%', padding: '14px', marginTop: 4,
+                    background: loading ? '#C8A882' : '#B5462E',
+                    color: '#F0E6D0', border: '2.5px solid #1C1A17',
+                    fontFamily: 'Vazirmatn', fontWeight: 800, fontSize: 16,
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    boxShadow: loading ? 'none' : '-5px 5px 0 0 #1C1A17',
+                    transition: 'transform 0.1s, box-shadow 0.1s',
                   }}
-                />
-              </div>
-            )}
-
-            {/* Email */}
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1C1A17', marginBottom: 6 }}>
-                ئیمەیڵ
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                required
-                style={{
-                  width: '100%', padding: '12px 14px',
-                  background: '#F0E6D0', border: '2.5px solid #1C1A17',
-                  fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17',
-                  outline: 'none', boxSizing: 'border-box',
-                  transition: 'box-shadow 0.15s',
-                }}
-                onFocus={e => e.target.style.boxShadow = '-3px 3px 0 0 #D4A53A'}
-                onBlur={e => e.target.style.boxShadow = 'none'}
-              />
-            </div>
-
-            {/* Password */}
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1C1A17', marginBottom: 6 }}>
-                وشەی نهێنی
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                minLength={6}
-                style={{
-                  width: '100%', padding: '12px 14px',
-                  background: '#F0E6D0', border: '2.5px solid #1C1A17',
-                  fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17',
-                  outline: 'none', boxSizing: 'border-box',
-                  transition: 'box-shadow 0.15s',
-                }}
-                onFocus={e => e.target.style.boxShadow = '-3px 3px 0 0 #D4A53A'}
-                onBlur={e => e.target.style.boxShadow = 'none'}
-              />
-            </div>
-
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                width: '100%', padding: '14px', marginTop: 4,
-                background: loading ? '#C8A882' : '#B5462E',
-                color: '#F0E6D0', border: '2.5px solid #1C1A17',
-                fontFamily: 'Vazirmatn', fontWeight: 800, fontSize: 16,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: loading ? 'none' : '-5px 5px 0 0 #1C1A17',
-                transition: 'transform 0.1s, box-shadow 0.1s',
-              }}
-              onMouseEnter={e => { if (!loading) { (e.target as HTMLButtonElement).style.transform = 'translate(-3px, 3px)'; (e.target as HTMLButtonElement).style.boxShadow = '-2px 2px 0 0 #1C1A17' } }}
-              onMouseLeave={e => { (e.target as HTMLButtonElement).style.transform = 'none'; (e.target as HTMLButtonElement).style.boxShadow = loading ? 'none' : '-5px 5px 0 0 #1C1A17' }}
-            >
-              {loading ? 'چاوەڕوان بە...' : mode === 'login' ? 'چوونەژوورەوە' : 'تۆمارکردن'}
-            </button>
-          </form>
+                  onMouseEnter={e => { if (!loading) { (e.target as HTMLButtonElement).style.transform = 'translate(-3px, 3px)'; (e.target as HTMLButtonElement).style.boxShadow = '-2px 2px 0 0 #1C1A17' } }}
+                  onMouseLeave={e => { (e.target as HTMLButtonElement).style.transform = 'none'; (e.target as HTMLButtonElement).style.boxShadow = loading ? 'none' : '-5px 5px 0 0 #1C1A17' }}
+                >
+                  {loading ? 'چاوەڕوان بە...' : mode === 'login' ? 'چوونەژوورەوە' : mode === 'signup' ? 'تۆمارکردن' : 'ناردنی لینکی گۆڕین'}
+                </button>
+              </form>
+            </>
+          )}
 
           {/* Squiggle divider */}
           <div style={{ margin: '20px 0' }}>
@@ -229,16 +264,29 @@ function AuthContent() {
 
           {/* Mode toggle */}
           <div style={{ textAlign: 'center' }}>
-            <button
-              onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: '#B5462E', fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: 700,
-                textDecoration: 'underline', textDecorationStyle: 'wavy',
-              }}
-            >
-              {mode === 'login' ? 'هێشتا هەژمارت نییە؟ تۆمار بە' : 'پێشتر هەژمارت دروست کردووە؟ بچۆ ژوورەوە'}
-            </button>
+            {mode === 'reset' ? (
+              <button
+                onClick={() => setMode('login')}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#B5462E', fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: 700,
+                  textDecoration: 'underline', textDecorationStyle: 'wavy',
+                }}
+              >
+                گەڕانەوە بۆ چوونەژوورەوە
+              </button>
+            ) : (
+              <button
+                onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#B5462E', fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: 700,
+                  textDecoration: 'underline', textDecorationStyle: 'wavy',
+                }}
+              >
+                {mode === 'login' ? 'هێشتا هەژمارت نییە؟ تۆمار بە' : 'پێشتر هەژمارت دروست کردووە؟ بچۆ ژوورەوە'}
+              </button>
+            )}
           </div>
         </div>
 

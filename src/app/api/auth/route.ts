@@ -28,6 +28,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ user: data.user, session: data.session })
   }
 
+  if (mode === 'reset') {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${new URL(req.url).origin}/settings`,
+    })
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    return NextResponse.json({ ok: true })
+  }
+
   if (mode === 'logout') {
     await supabase.auth.signOut()
     return NextResponse.json({ ok: true })
