@@ -1,246 +1,228 @@
-import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Brain, Zap, Shield, Languages, Cpu, Network, Sparkles } from 'lucide-react'
-import Navbar from '@/components/Navbar'
-import Background from '@/components/Background'
-import { toArabicIndic } from '@/lib/utils'
 import type { Metadata } from 'next'
-import torusImg from '@/assets/torus-3d.png'
 
 export const metadata: Metadata = {
   title: 'shuty.ai — زیرەکی دەستکرد بە کوردی',
-  description: 'platforma زیرەکی دەستکردی کوردی — بە زمانی سۆرانی. تێگەیشتنی قووڵ، وەڵامی خێرا.',
+  description: 'پلاتفۆرمی زیرەکی دەستکردی کوردی — بە زمانی سۆرانی. تێگەیشتنی قووڵ، وەڵامی خێرا.',
+}
+
+function toArabicDigits(n: string | number) {
+  return String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[+d])
+}
+
+function Squiggle({ color = '#1C1A17' }: { color?: string }) {
+  return (
+    <svg viewBox="0 0 300 12" style={{ width: '100%', height: 12 }}>
+      <path d="M0,6 C20,0 40,12 60,6 C80,0 100,12 120,6 C140,0 160,12 180,6 C200,0 220,12 240,6 C260,0 280,12 300,6"
+        fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function Stamp({ label = 'شتی', rotate = '-10deg', size = 80 }: { label?: string; rotate?: string; size?: number }) {
+  return (
+    <svg viewBox="0 0 80 80" width={size} height={size} style={{ transform: `rotate(${rotate})`, flexShrink: 0 }}>
+      <circle cx="40" cy="40" r="38" fill="none" stroke="#B5462E" strokeWidth="2.5" strokeDasharray="4 2" />
+      <circle cx="40" cy="40" r="32" fill="none" stroke="#B5462E" strokeWidth="1.5" />
+      <text x="40" y="45" textAnchor="middle" fontSize="17" fontFamily="Vazirmatn" fontWeight="800" fill="#B5462E">{label}</text>
+    </svg>
+  )
+}
+
+function Tape({ rotate = '-2deg', width = 80 }: { rotate?: string; width?: number }) {
+  return (
+    <div style={{
+      width, height: 20, background: 'rgba(212,165,58,0.55)',
+      border: '1px solid rgba(212,165,58,0.8)',
+      transform: `rotate(${rotate})`,
+      position: 'relative', overflow: 'hidden',
+      boxShadow: '-2px 2px 0 0 rgba(28,26,23,0.12)',
+      flexShrink: 0,
+    }}>
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(90deg, transparent 0px, transparent 6px, rgba(255,255,255,0.25) 6px, rgba(255,255,255,0.25) 8px)' }} />
+    </div>
+  )
 }
 
 const features = [
-  { num: '٠١', label: 'تێگەیشتنی قووڵ',    icon: Brain,     span: 'col-span-5' },
-  { num: '٠٢', label: 'خێرایی ڕاستەقینە',   icon: Zap,       span: 'col-span-4' },
-  { num: '٠٣', label: 'ئاسایشی تەواو',      icon: Shield,    span: 'col-span-3' },
-  { num: '٠٤', label: 'فرە-زمانی',          icon: Languages, span: 'col-span-3' },
-  { num: '٠٥', label: 'پرۆسیسۆری زانست',   icon: Cpu,       span: 'col-span-4' },
-  { num: '٠٦', label: 'API ی کراوە',        icon: Network,   span: 'col-span-5' },
+  { num: '٠١', title: 'تێگەیشتنی قووڵ', desc: 'تێدەگات بە وردییە کلتووری و ڕێزمانی زمانی کوردی' },
+  { num: '٠٢', title: 'گەڕانی ڕاستەوخۆ', desc: 'پێش هەر وەڵامێک لە گووگڵ دەگەڕێت بۆ زانیاری نوێ' },
+  { num: '٠٣', title: 'خێرایی ڕاستەقینە', desc: 'سیستەمی چەندین کلیل و چەندین مۆدێل بۆ کاری بەردەوام' },
+  { num: '٠٤', title: 'ئاسایشی تەواو', desc: 'داتاکەت پارێزراوە و بەسەردەستی کەسی تر ناچێت' },
 ]
 
 export default function HomePage() {
+  const today = new Date()
+  const kurdishMonths = ['کانوونی دووەم','شوبات','ئازار','نیسان','ئایار','حوزەیران','تەممووز','ئاب','ئەیلوول','تشرینی یەکەم','تشرینی دووەم','کانوونی یەکەم']
+  const dateStr = `${toArabicDigits(today.getDate())}ی ${kurdishMonths[today.getMonth()]} ${toArabicDigits(today.getFullYear())}`
+
   return (
-    <div className="relative min-h-screen overflow-x-hidden">
-      <Background />
-      <Navbar />
+    <div style={{ minHeight: '100vh', background: '#F0E6D0', color: '#1C1A17', direction: 'rtl', position: 'relative', zIndex: 1, fontFamily: 'Vazirmatn, sans-serif' }}>
 
-      {/* ── HERO ──────────────────────────────────────────── */}
-      <section className="relative z-10 max-w-[1400px] mx-auto px-12 pt-40 pb-24">
-        <div className="grid grid-cols-12 gap-8 items-center">
+      {/* ── NAV ─────────────────────────────────────────── */}
+      <nav style={{ borderBottom: '3px solid #1C1A17', padding: '0 48px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#EDE0C5', position: 'relative' }}>
+        <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.5px' }}>shuty.ai</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+          <Link href="/pricing" style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>نرخەکان</Link>
+          <Link href="/auth" style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>چوونەژوورەوە</Link>
+          <Link
+            href="/chat"
+            style={{
+              padding: '8px 20px', background: '#B5462E', color: '#F0E6D0',
+              border: '2px solid #1C1A17', fontWeight: 700, fontSize: 14,
+              textDecoration: 'none', boxShadow: '-4px 4px 0 0 #1C1A17',
+              display: 'inline-block', transition: 'transform 0.1s, box-shadow 0.1s',
+            }}
+          >
+            دەستپێکردن
+          </Link>
+        </div>
+      </nav>
 
-          {/* Left — copy */}
-          <div className="col-span-7 space-y-8">
-            {/* Tag */}
-            <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-2">
-              <span className="font-mono-kd text-xs tracking-[0.2em]" style={{ color: 'oklch(0.78 0.22 235)' }}>
-                ◆ NEURAL FABRIC — نەوەی چوارەم
-              </span>
-            </div>
+      {/* ── HERO ─────────────────────────────────────────── */}
+      <section style={{ maxWidth: 900, margin: '0 auto', padding: '80px 48px 64px' }}>
+        {/* Date chip */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
+          <Tape rotate="-2deg" width={60} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#6B7341', letterSpacing: '0.1em' }}>
+            ئەمڕۆ • {dateStr}
+          </span>
+          <Tape rotate="2deg" width={50} />
+        </div>
 
-            {/* H1 */}
-            <h1 className="font-black leading-[1.05]" style={{ fontSize: '5.5rem' }}>
-              <span className="gradient-text block">زیرەکی دەستکرد،</span>
-              <span className="gradient-text block">
-                بە زمانی{' '}
-                <span className="glow-text" style={{ color: 'oklch(0.78 0.22 235)', WebkitTextFillColor: 'oklch(0.78 0.22 235)' }}>
-                  کوردی
-                </span>
-                .
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 32 }}>
+          <div style={{ flex: 1 }}>
+            <h1 style={{ fontSize: 'clamp(42px, 7vw, 80px)', fontWeight: 800, lineHeight: 1.1, marginBottom: 24, letterSpacing: '-1px' }}>
+              زیرەکی دەستکرد،
+              <br />
+              <span style={{ color: '#B5462E', display: 'inline-block', transform: 'rotate(-0.5deg)' }}>
+                بە زمانی کوردی.
               </span>
             </h1>
-
-            {/* Para */}
-            <p className="max-w-xl text-lg leading-relaxed" style={{ color: 'oklch(0.65 0.02 240)' }}>
-              "shuty.ai" زیرەکی دەستکردی تایبەتە بۆ زمانی کوردی سۆرانی. مۆدێلی ئێمە لەسەر میلیۆنها
-              دەستنووسی کوردی فێر بووە و تێدەگات بە وردییە کلتووری و ڕێزمانی کە هیچ سیستەمی تری
-              نایانزانێت.
+            {/* Squiggle under headline */}
+            <div style={{ marginBottom: 24, maxWidth: 400 }}>
+              <Squiggle color="#D4A53A" />
+            </div>
+            <p style={{ fontSize: 16, lineHeight: 1.7, color: '#3A3730', maxWidth: 480, marginBottom: 40, fontWeight: 400 }}>
+              shuty.ai پلاتفۆرمی زیرەکی دەستکردییە کە تایبەت بۆ زمانی کوردی سۆرانی دروستکراوە. گەڕانی ڕاستەوخۆ لە ئینتەرنێت و وەڵامی درووست بە کوردی.
             </p>
-
-            {/* CTA row */}
-            <div className="flex items-center gap-4">
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
               <Link
                 href="/chat"
-                className="flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-[1.02]"
                 style={{
-                  background: 'oklch(0.78 0.22 235)',
-                  color: 'oklch(0.10 0.05 255)',
-                  boxShadow: '0 0 40px oklch(0.78 0.22 235 / 0.5)',
+                  padding: '14px 32px', background: '#B5462E', color: '#F0E6D0',
+                  border: '3px solid #1C1A17', fontWeight: 800, fontSize: 16,
+                  textDecoration: 'none', boxShadow: '-6px 6px 0 0 #1C1A17',
+                  display: 'inline-block', transition: 'transform 0.1s, box-shadow 0.1s',
                 }}
               >
-                دەستپێکردنی گفتوگۆ
-                <ArrowLeft size={20} style={{ transform: 'scaleX(-1)' }} />
+                دەستپێکردنی گفتوگۆ ←
               </Link>
               <Link
                 href="/pricing"
-                className="glass flex items-center gap-3 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 hover:bg-[oklch(0.30_0.04_250/0.5)]"
+                style={{
+                  padding: '14px 28px', background: 'transparent', color: '#1C1A17',
+                  border: '3px solid #1C1A17', fontWeight: 700, fontSize: 15,
+                  textDecoration: 'none', boxShadow: '-5px 5px 0 0 #D4A53A',
+                  display: 'inline-block',
+                }}
               >
-                بینینی نرخەکان
+                نرخەکان
               </Link>
             </div>
-
-            {/* Stats strip */}
-            <div className="grid grid-cols-3 gap-0 glass rounded-2xl overflow-hidden mt-4">
-              {[
-                { val: `+${toArabicIndic(98)}٪`, label: 'وردبینی لە سۆرانیدا' },
-                { val: `<${toArabicIndic(300)}ms`, label: 'خێرایی وەڵامدانەوە' },
-                { val: `${toArabicIndic(24)}/${toArabicIndic(7)}`, label: 'بەردەستی بەردەوام' },
-              ].map((stat, i) => (
-                <div key={i} className={`px-8 py-6 text-center ${i < 2 ? 'border-l border-[oklch(0.30_0.04_250)]' : ''}`}>
-                  <div className="font-mono-kd text-2xl font-bold" style={{ color: 'oklch(0.78 0.22 235)' }}>
-                    {stat.val}
-                  </div>
-                  <div className="text-sm mt-1" style={{ color: 'oklch(0.65 0.02 240)' }}>{stat.label}</div>
-                </div>
-              ))}
-            </div>
           </div>
+          {/* Stamp decoration */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, paddingTop: 16 }}>
+            <Stamp label="شتی" rotate="-8deg" size={100} />
+            <Stamp label="کوردی" rotate="5deg" size={72} />
+          </div>
+        </div>
 
-          {/* Right — 3D torus */}
-          <div className="col-span-5 relative aspect-square flex items-center justify-center">
-            {/* Aurora backdrop */}
-            <div className="absolute inset-0 aurora aurora-1 scale-75 opacity-60" />
+        {/* Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0, marginTop: 56, border: '3px solid #1C1A17', boxShadow: '-6px 6px 0 0 #1C1A17' }}>
+          {[
+            { val: `+${toArabicDigits(98)}٪`, label: 'تێگەیشتنی سۆرانی' },
+            { val: toArabicDigits('٢٤/٧'), label: 'بەردەستی بەردەوام' },
+            { val: toArabicDigits(2500), label: 'گەڕانی بەخۆڕایی' },
+          ].map((stat, i) => (
+            <div key={i} style={{
+              padding: '24px 20px', textAlign: 'center', background: i === 1 ? '#EDE0C5' : '#F0E6D0',
+              borderRight: i > 0 ? '3px solid #1C1A17' : undefined,
+            }}>
+              <div style={{ fontSize: 28, fontWeight: 800, color: '#B5462E', marginBottom: 4 }}>{stat.val}</div>
+              <div style={{ fontSize: 12, color: '#6B7341', fontWeight: 600 }}>{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-            {/* Rotating rings */}
-            <div
-              className="absolute inset-4 rounded-full border animate-spin-slow"
-              style={{ borderColor: 'oklch(0.78 0.22 235 / 0.2)' }}
-            />
-            <div
-              className="absolute inset-10 rounded-full border animate-spin-slow-r"
-              style={{ borderColor: 'oklch(0.78 0.22 235 / 0.1)' }}
-            />
+      {/* ── SQUIGGLE DIVIDER ─────────────────────────────── */}
+      <div style={{ padding: '0 48px', maxWidth: 900, margin: '0 auto' }}>
+        <Squiggle color="#B5462E" />
+      </div>
 
-            {/* Torus image */}
+      {/* ── FEATURES ─────────────────────────────────────── */}
+      <section style={{ maxWidth: 900, margin: '0 auto', padding: '64px 48px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 40 }}>
+          <Tape rotate="-3deg" width={40} />
+          <h2 style={{ fontSize: 32, fontWeight: 800 }}>تایبەتمەندییەکان</h2>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
+          {features.map((f, i) => (
             <div
-              className="relative z-10 animate-float"
-              style={{ 
-                filter: 'drop-shadow(0 0 80px oklch(0.78 0.22 235 / 0.7))',
-                mixBlendMode: 'screen',
-                WebkitMaskImage: 'radial-gradient(circle, black 50%, transparent 95%)',
-                maskImage: 'radial-gradient(circle, black 50%, transparent 95%)'
+              key={f.num}
+              style={{
+                padding: '28px 24px', background: '#EDE0C5', border: '2.5px solid #1C1A17',
+                boxShadow: '-5px 5px 0 0 #1C1A17',
+                transform: `rotate(${i % 2 === 0 ? '0.4deg' : '-0.4deg'})`,
+                position: 'relative',
               }}
             >
-              <Image
-                src={torusImg}
-                alt="Shuty.ai Neural Torus"
-                width={420}
-                height={420}
-                priority
-              />
+              {i === 0 && <div style={{ position: 'absolute', top: -10, right: 24 }}><Tape rotate="-4deg" width={60} /></div>}
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#B5462E', letterSpacing: '0.1em', marginBottom: 8 }}>{f.num}</div>
+              <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>{f.title}</h3>
+              <p style={{ fontSize: 13, color: '#3A3730', lineHeight: 1.6, fontWeight: 400 }}>{f.desc}</p>
             </div>
+          ))}
+        </div>
+      </section>
 
-            {/* Floating data tags */}
-            <div
-              className="absolute top-[15%] right-[10%] glass rounded-xl px-4 py-2 font-mono-kd text-sm z-20 animate-float"
-              style={{ animationDelay: '-1s', color: 'oklch(0.78 0.22 235)' }}
+      {/* ── CTA STAMP BLOCK ──────────────────────────────── */}
+      <section style={{ maxWidth: 900, margin: '0 auto 80px', padding: '0 48px' }}>
+        <div style={{
+          padding: '48px 40px', background: '#EDE0C5', border: '3px solid #1C1A17',
+          boxShadow: '-8px 8px 0 0 #6B7341', textAlign: 'center', position: 'relative',
+        }}>
+          <Tape rotate="-2deg" width={80} />
+          <div style={{ position: 'absolute', top: 16, left: 20 }}>
+            <Stamp label="شتی" rotate="-12deg" size={72} />
+          </div>
+          <h2 style={{ fontSize: 28, fontWeight: 800, marginBottom: 12 }}>زمانی کوردی شایانی زیرەکییەکی شایستەیە.</h2>
+          <Squiggle color="#B5462E" />
+          <div style={{ marginTop: 28 }}>
+            <Link
+              href="/auth"
+              style={{
+                padding: '14px 36px', background: '#D4A53A', color: '#1C1A17',
+                border: '3px solid #1C1A17', fontWeight: 800, fontSize: 16,
+                textDecoration: 'none', boxShadow: '-6px 6px 0 0 #1C1A17',
+                display: 'inline-block',
+              }}
             >
-              ◇ خێرایی
-            </div>
-            <div
-              className="absolute bottom-[15%] left-[8%] glass rounded-xl px-4 py-2 font-mono-kd text-sm z-20 animate-float"
-              style={{ animationDelay: '-3s', color: 'oklch(0.85 0.15 220)' }}
-            >
-              ◆ بیرەوەری
-            </div>
-            <div
-              className="absolute top-[45%] left-[4%] glass rounded-xl px-4 py-2 font-mono-kd text-sm z-20 animate-float"
-              style={{ animationDelay: '-2s', color: 'oklch(0.65 0.18 50)' }}
-            >
-              ▲ هێز
-            </div>
+              دەستپێکردنی بێبەرامبەر
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* ── FEATURES ──────────────────────────────────────── */}
-      <section className="relative z-10 max-w-[1400px] mx-auto px-12 py-24">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-16 gap-12">
-          <div className="space-y-4">
-            <p className="font-mono-kd text-xs tracking-[0.25em] uppercase" style={{ color: 'oklch(0.65 0.02 240)' }}>
-              — تایبەتمەندییەکان —
-            </p>
-            <h2 className="text-5xl font-black gradient-text leading-tight">
-              ئەندازیاریی تایبەت بۆ<br />وردەکارییەکانی زمانی کوردی
-            </h2>
-          </div>
-          <p className="max-w-sm text-base leading-relaxed mt-4" style={{ color: 'oklch(0.65 0.02 240)' }}>
-            هەر تایبەتمەندییەک بە وردی دیزاین کراوە بۆ تێگەیشتن و دەربڕینی ئاست-بەرز بە زمانی سۆرانی.
-          </p>
-        </div>
-
-        {/* Feature grid */}
-        <div className="grid grid-cols-12 gap-4">
-          {features.map((f) => {
-            const Icon = f.icon
-            return (
-              <div
-                key={f.num}
-                className={`${f.span} glass rounded-2xl p-8 group relative overflow-hidden cursor-default transition-all duration-500 hover:border-[oklch(0.78_0.22_235/0.4)]`}
-              >
-                {/* Hover aurora */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                  style={{ background: 'radial-gradient(circle at 50% 50%, oklch(0.78 0.22 235 / 0.08) 0%, transparent 70%)' }} />
-
-                {/* Mono number top-left (RTL = top-right visually) */}
-                <span className="absolute top-5 left-5 font-mono-kd text-xs" style={{ color: 'oklch(0.45 0.03 245)' }}>
-                  {f.num}
-                </span>
-
-                {/* Icon */}
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 border"
-                  style={{
-                    background: 'oklch(0.10 0.05 255)',
-                    borderColor: 'oklch(0.78 0.22 235 / 0.3)',
-                  }}
-                >
-                  <Icon size={22} style={{ color: 'oklch(0.78 0.22 235)' }} />
-                </div>
-
-                <h3 className="text-lg font-bold">{f.label}</h3>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* CTA Banner */}
-        <div className="mt-16 glass rounded-3xl p-16 relative overflow-hidden text-center">
-          <div className="absolute inset-0 aurora aurora-1 scale-110 opacity-30 pointer-events-none" />
-          <p className="font-mono-kd text-xs tracking-[0.25em] mb-6" style={{ color: 'oklch(0.65 0.02 240)' }}>
-            — ئامادەی دەستپێکردنیت؟ —
-          </p>
-          <h2 className="text-5xl font-black gradient-text mb-10 leading-tight relative z-10">
-            زمانی کوردی شایانی<br />زیرەکییەکی شایستەیە.
-          </h2>
-          <Link
-            href="/auth"
-            className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl font-bold text-xl transition-all duration-300 hover:scale-105 relative z-10"
-            style={{
-              background: 'oklch(0.78 0.22 235)',
-              color: 'oklch(0.10 0.05 255)',
-              boxShadow: '0 0 60px oklch(0.78 0.22 235 / 0.5)',
-            }}
-          >
-            دەستپێکردنی بێبەرامبەر
-            <Sparkles size={20} />
-          </Link>
-        </div>
-      </section>
-
-      {/* ── FOOTER ──────────────────────────────────────── */}
-      <footer className="relative z-10 border-t border-[oklch(0.30_0.04_250/0.5)] py-8 px-12 max-w-[1400px] mx-auto">
-        <div className="flex items-center justify-between">
-          <span className="font-mono-kd text-xs" style={{ color: 'oklch(0.45 0.03 245)' }}>
-            © {toArabicIndic(2025)} shuty.ai — هەموو مافەکان پارێزراون
-          </span>
-          <span className="font-mono-kd text-xs" style={{ color: 'oklch(0.45 0.03 245)' }}>
-            دروستکراوە لە کوردستان · v{toArabicIndic('2.5')}-beta
-          </span>
-        </div>
+      {/* ── FOOTER ───────────────────────────────────────── */}
+      <footer style={{ borderTop: '3px solid #1C1A17', padding: '20px 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#EDE0C5' }}>
+        <span style={{ fontSize: 11, color: '#6B7341', fontWeight: 600 }}>
+          © {toArabicDigits(2025)} shuty.ai — هەموو مافەکان پارێزراون
+        </span>
+        <span style={{ fontSize: 11, color: '#6B7341', fontWeight: 600 }}>
+          دروستکراوە لە کوردستان · v{toArabicDigits('2.5')}
+        </span>
       </footer>
     </div>
   )

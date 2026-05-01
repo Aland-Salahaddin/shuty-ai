@@ -2,22 +2,103 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Send, User, Bot, LogOut, Settings as SettingsIcon, Menu, X, Sparkles, Trash2, Edit2, Check, Home } from 'lucide-react'
-import Background from '@/components/Background'
+import { Plus, Send, LogOut, Settings as SettingsIcon, Home, Trash2, Edit2, Check, Menu, X } from 'lucide-react'
 import Modal from '@/components/Modal'
-import { toArabicIndic, newSessionId, cn } from '@/lib/utils'
+import { newSessionId } from '@/lib/utils'
 
-interface Message {
-  role: 'user' | 'assistant'
-  content: string
+/* ── helpers ───────────────────────────────────────────── */
+function toArabicDigits(n: string | number): string {
+  return String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[+d])
 }
 
-interface Session {
-  id: string
-  title: string
-  created_at: string
+function cn(...classes: (string | false | undefined | null)[]) {
+  return classes.filter(Boolean).join(' ')
 }
 
+/* ── SVG accent components ─────────────────────────────── */
+function Squiggle({ color = '#1C1A17', className = '' }) {
+  return (
+    <svg viewBox="0 0 300 12" className={className} style={{ width: '100%', height: 12, overflow: 'visible' }}>
+      <path
+        d="M0,6 C20,0 40,12 60,6 C80,0 100,12 120,6 C140,0 160,12 180,6 C200,0 220,12 240,6 C260,0 280,12 300,6"
+        fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+function Tape({ rotate = '-2deg', top = '-10px', right = '20%' }) {
+  return (
+    <div style={{
+      position: 'absolute', top, right,
+      transform: `rotate(${rotate})`,
+      width: 80, height: 20,
+      background: 'rgba(212,165,58,0.55)',
+      border: '1px solid rgba(212,165,58,0.8)',
+      zIndex: 10,
+      pointerEvents: 'none',
+      boxShadow: '-2px 2px 0 0 rgba(28,26,23,0.15)',
+    }}>
+      {/* stripe texture */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: 'repeating-linear-gradient(90deg, transparent 0px, transparent 6px, rgba(255,255,255,0.25) 6px, rgba(255,255,255,0.25) 8px)',
+      }} />
+    </div>
+  )
+}
+
+function Stamp({ label = 'شتی', rotate = '-10deg', size = 72 }) {
+  return (
+    <div style={{
+      position: 'relative',
+      width: size, height: size,
+      transform: `rotate(${rotate})`,
+      userSelect: 'none',
+      pointerEvents: 'none',
+      flexShrink: 0,
+    }}>
+      <svg viewBox="0 0 72 72" width={size} height={size}>
+        <circle cx="36" cy="36" r="34" fill="none" stroke="#B5462E" strokeWidth="2.5" strokeDasharray="4 2" />
+        <circle cx="36" cy="36" r="28" fill="none" stroke="#B5462E" strokeWidth="1.5" />
+        <text x="36" y="40" textAnchor="middle" fontSize="16" fontFamily="Vazirmatn" fontWeight="700" fill="#B5462E">
+          {label}
+        </text>
+      </svg>
+      {/* ink roughness overlay */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        borderRadius: '50%',
+        background: 'radial-gradient(circle at 60% 40%, rgba(181,70,46,0.08), transparent 70%)',
+      }} />
+    </div>
+  )
+}
+
+function HandFrame({ children, tilt = '0deg', className = '' }: {
+  children: React.ReactNode; tilt?: string; className?: string
+}) {
+  return (
+    <div style={{ position: 'relative', transform: `rotate(${tilt})`, display: 'inline-block' }} className={className}>
+      <svg style={{ position: 'absolute', inset: -4, width: 'calc(100% + 8px)', height: 'calc(100% + 8px)', pointerEvents: 'none', zIndex: 1 }}
+        viewBox="0 0 100 100" preserveAspectRatio="none">
+        <path
+          d="M2,3 Q50,-1 98,2 Q102,50 99,98 Q50,102 2,99 Q-2,50 2,3 Z"
+          fill="none" stroke="#1C1A17" strokeWidth="3" strokeLinejoin="round" vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+      <div style={{ position: 'relative', zIndex: 2 }}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/* ── Types ──────────────────────────────────────────────── */
+interface Message { role: 'user' | 'assistant'; content: string }
+interface Session { id: string; title: string; created_at: string }
+
+/* ── Main Component ─────────────────────────────────────── */
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -49,56 +130,34 @@ export default function ChatPage() {
       const res = await fetch('/api/history?type=sessions')
       const data = await res.json()
       if (data.sessions) setSessions(data.sessions)
-    } catch (err) {
-      console.error('Failed to fetch sessions')
-    }
+    } catch {}
   }
 
   const fetchMessages = async (sid: string) => {
     try {
       const res = await fetch(`/api/history?session_id=${sid}`)
       const data = await res.json()
-      if (data.messages) {
-        setMessages(data.messages.map((m: any) => ({ role: m.role, content: m.content })))
-      } else {
-        setMessages([])
-      }
-    } catch (err) {
-      console.error('Failed to fetch messages')
-    }
+      setMessages(data.messages ? data.messages.map((m: any) => ({ role: m.role, content: m.content })) : [])
+    } catch {}
   }
 
   const handleSend = async () => {
     if (!input.trim() || loading) return
-
     const userMsg: Message = { role: 'user', content: input }
     setMessages(prev => [...prev, userMsg])
     setInput('')
     setLoading(true)
-
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: [...messages, userMsg], sessionId }),
       })
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({ error: 'Error' }))
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: `❌ هەڵە: ${errData.details || errData.error || 'پەیوەندی پچڕا'}` 
-        }])
-        return
-      }
-
       const data = await res.json()
-      if (data.text) {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.text }])
-      }
+      if (data.text) setMessages(prev => [...prev, { role: 'assistant', content: data.text }])
       fetchSessions()
-    } catch (err) {
-      console.error('Chat error', err)
+    } catch {
+      setMessages(prev => [...prev, { role: 'assistant', content: 'ببوورە، پەیوەندی پچڕا. دووبارە هەوڵ بدەرەوە.' }])
     } finally {
       setLoading(false)
     }
@@ -118,44 +177,25 @@ export default function ChatPage() {
       setModalOpen(false)
       setSessionToDelete(null)
       fetchSessions()
-    } catch (err) {
-      console.error('Delete failed')
-    }
+    } catch {}
   }
 
-  const handleRename = async (sid: string, e: React.MouseEvent) => {
+  const handleRename = (sid: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    const session = sessions.find(s => s.id === sid)
-    if (session) {
-      setEditingId(sid)
-      setEditTitle(session.title)
-    }
+    const s = sessions.find(s => s.id === sid)
+    if (s) { setEditingId(sid); setEditTitle(s.title) }
   }
 
   const saveRename = async (sid: string) => {
     try {
-      await fetch('/api/history', {
-        method: 'PATCH',
-        body: JSON.stringify({ sessionId: sid, title: editTitle })
-      })
+      await fetch('/api/history', { method: 'PATCH', body: JSON.stringify({ sessionId: sid, title: editTitle }) })
       setEditingId(null)
       fetchSessions()
-    } catch (err) {
-      console.error('Rename failed')
-    }
+    } catch {}
   }
 
-  const startNewChat = () => {
-    const sid = newSessionId()
-    setSessionId(sid)
-    setMessages([])
-  }
-
-  const selectSession = (sid: string) => {
-    setSessionId(sid)
-    fetchMessages(sid)
-  }
-
+  const startNewChat = () => { setSessionId(newSessionId()); setMessages([]) }
+  const selectSession = (sid: string) => { setSessionId(sid); fetchMessages(sid) }
   const handleLogout = async () => {
     await fetch('/api/auth', { method: 'POST', body: JSON.stringify({ mode: 'logout' }) })
     router.push('/')
@@ -163,156 +203,277 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="relative h-screen flex overflow-hidden bg-background">
-      <Background />
+    <div style={{
+      height: '100vh', display: 'flex', overflow: 'hidden',
+      background: '#F0E6D0', direction: 'rtl', position: 'relative', zIndex: 1,
+    }}>
 
-      {/* Sidebar */}
-      <div className={cn(
-        "relative z-20 flex flex-col glass border-l border-[oklch(0.30_0.04_250/0.4)] transition-all duration-300",
-        sidebarOpen ? "w-80" : "w-0"
-      )}>
-        <div className="p-6 flex items-center gap-3 overflow-hidden whitespace-nowrap">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center animate-pulse-glow"
-            style={{ background: 'linear-gradient(135deg, oklch(0.55 0.25 240), oklch(0.78 0.22 235))' }}>
-            <Sparkles size={16} className="text-[oklch(0.10_0.05_255)]" />
+      {/* ── SIDEBAR ─────────────────────────────────────── */}
+      <div style={{
+        width: sidebarOpen ? 280 : 0,
+        minWidth: sidebarOpen ? 280 : 0,
+        background: '#EDE0C5',
+        borderLeft: '3px solid #1C1A17',
+        display: 'flex', flexDirection: 'column',
+        overflow: 'hidden',
+        transition: 'width 0.25s ease, min-width 0.25s ease',
+        position: 'relative', zIndex: 20,
+        flexShrink: 0,
+      }}>
+        {/* Logo */}
+        <div style={{ padding: '24px 20px 16px', borderBottom: '2px solid #1C1A17', position: 'relative' }}>
+          <Tape top="-8px" right="30%" rotate="-2deg" />
+          <div style={{ fontFamily: 'Vazirmatn', fontWeight: 800, fontSize: 22, color: '#1C1A17', letterSpacing: '-0.5px' }}>
+            shuty.ai
           </div>
-          <span className="font-bold text-lg">shuty.ai</span>
+          <div style={{ width: 60, height: 4, background: '#D4A53A', marginTop: 4, transform: 'rotate(-0.5deg)' }} />
+          <button
+            onClick={() => setSidebarOpen(false)}
+            style={{ position: 'absolute', top: 20, left: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#1C1A17', padding: 4 }}
+          >
+            <X size={18} />
+          </button>
         </div>
 
-        <div className="px-4 mb-6 overflow-hidden">
-          <button onClick={startNewChat} title="New Chat" className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[oklch(0.78_0.22_235/0.3)] hover:bg-[oklch(0.78_0.22_235/0.1)] transition-all text-[oklch(0.78_0.22_235)] font-medium">
-            <Plus size={18} />
+        {/* New chat */}
+        <div style={{ padding: '16px 20px' }}>
+          <button
+            onClick={startNewChat}
+            className="press-effect"
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '10px 16px', background: '#D4A53A', color: '#1C1A17', border: '2px solid #1C1A17',
+              fontFamily: 'Vazirmatn', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+              boxShadow: '-4px 4px 0 0 #1C1A17',
+            }}
+          >
+            <Plus size={16} />
             گفتوگۆی نوێ
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 space-y-2 overflow-x-hidden">
-          <p className="text-[oklch(0.45_0.03_245)] text-xs font-mono-kd uppercase tracking-widest px-2 mb-2">گفتوگۆکان</p>
-          {sessions.map((s) => (
-            <div key={s.id} className="group relative">
+        <Squiggle className="px-4" color="#1C1A17" />
+
+        {/* Sessions */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px' }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#6B7341', letterSpacing: '0.15em', padding: '4px 8px 8px', textTransform: 'uppercase' }}>
+            گفتوگۆکان
+          </p>
+          {sessions.map((s, idx) => (
+            <div key={s.id} style={{ position: 'relative', marginBottom: 4 }}>
               {editingId === s.id ? (
-                <div className="flex items-center gap-1 p-1 bg-white/10 rounded-xl">
-                  <input 
-                    autoFocus
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') saveRename(s.id)
-                      if (e.key === 'Escape') setEditingId(null)
-                    }}
-                    className="flex-1 bg-transparent border-none outline-none text-xs px-2"
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: 6, background: 'rgba(28,26,23,0.06)', border: '1.5px solid #1C1A17' }}>
+                  <input
+                    autoFocus value={editTitle}
+                    onChange={e => setEditTitle(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') saveRename(s.id); if (e.key === 'Escape') setEditingId(null) }}
+                    style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 12, fontFamily: 'Vazirmatn', color: '#1C1A17' }}
                   />
-                  <button onClick={() => saveRename(s.id)} title="Save" className="p-1 hover:text-green-400"><Check size={14}/></button>
+                  <button onClick={() => saveRename(s.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7341' }}><Check size={14} /></button>
                 </div>
               ) : (
-                <button
-                  onClick={() => selectSession(s.id)}
-                  title={s.title || 'Chat'}
-                  className={cn(
-                    "w-full text-right p-3 rounded-xl text-sm transition-all truncate hover:bg-white/5 pr-4 pl-12",
-                    sessionId === s.id ? "bg-white/10 text-white" : "text-[oklch(0.65_0.02_240)]"
-                  )}
-                >
-                  {s.title || 'گفتوگۆی بێ ناو'}
-                </button>
-              )}
-              {editingId !== s.id && (
-                <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={(e) => handleRename(s.id, e)} title="Rename" className="p-1.5 hover:bg-white/10 rounded-md text-[oklch(0.65_0.02_240)]"><Edit2 size={14}/></button>
-                  <button onClick={(e) => handleDeleteSession(s.id, e)} title="Delete" className="p-1.5 hover:bg-red-500/20 rounded-md text-red-400"><Trash2 size={14}/></button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                  <button
+                    onClick={() => selectSession(s.id)}
+                    style={{
+                      flex: 1, textAlign: 'right', padding: '8px 10px', fontSize: 12, fontFamily: 'Vazirmatn',
+                      background: sessionId === s.id ? 'rgba(181,70,46,0.12)' : 'transparent',
+                      border: sessionId === s.id ? '1.5px solid #B5462E' : '1.5px solid transparent',
+                      color: sessionId === s.id ? '#B5462E' : '#1C1A17',
+                      cursor: 'pointer', fontWeight: sessionId === s.id ? 700 : 400,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      transform: `rotate(${idx % 2 === 0 ? '0.2deg' : '-0.2deg'})`,
+                    }}
+                  >
+                    {s.title || 'گفتوگۆی بێ ناو'}
+                  </button>
+                  <div style={{ display: 'flex', gap: 2 }}>
+                    <button onClick={e => handleRename(s.id, e)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7341', padding: 4 }}><Edit2 size={11} /></button>
+                    <button onClick={e => handleDeleteSession(s.id, e)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#B5462E', padding: 4 }}><Trash2 size={11} /></button>
+                  </div>
                 </div>
               )}
             </div>
           ))}
         </div>
 
-        <div className="p-4 border-t border-[oklch(0.30_0.04_250/0.4)] overflow-hidden">
-          <button onClick={() => router.push('/')} className="w-full flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg transition-colors text-[oklch(0.65_0.02_240)] mb-1">
-            <Home size={18} />
-            <span>سەرەکی</span>
+        <Squiggle color="#6B7341" />
+
+        {/* Footer */}
+        <div style={{ padding: '12px 16px', borderTop: '2px solid #1C1A17' }}>
+          <button onClick={() => router.push('/')} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#1C1A17', fontFamily: 'Vazirmatn', fontSize: 13, marginBottom: 2 }}>
+            <Home size={15} /> سەرەکی
           </button>
-          <button onClick={() => router.push('/settings')} className="w-full flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg transition-colors text-[oklch(0.65_0.02_240)] mb-1">
-            <SettingsIcon size={18} />
-            <span>ڕێکخستن</span>
+          <button onClick={() => router.push('/settings')} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#1C1A17', fontFamily: 'Vazirmatn', fontSize: 13, marginBottom: 2 }}>
+            <SettingsIcon size={15} /> ڕێکخستن
           </button>
-          <button onClick={handleLogout} className="w-full flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg transition-colors text-red-400">
-            <LogOut size={18} />
-            <span>چوونەدەرەوە</span>
+          <button onClick={handleLogout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#B5462E', fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: 700 }}>
+            <LogOut size={15} /> چوونەدەرەوە
           </button>
         </div>
       </div>
 
-      {/* Main Chat */}
-      <div className="relative flex-1 flex flex-col min-w-0">
-        {!sidebarOpen && (
-          <button onClick={() => setSidebarOpen(true)} title="Open Sidebar" className="absolute top-6 right-6 z-30 p-2 glass rounded-lg hover:bg-white/10"><Menu size={20}/></button>
-        )}
+      {/* ── MAIN CHAT ───────────────────────────────────── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
 
-        <div className="h-20 border-b border-[oklch(0.30_0.04_250/0.4)] flex items-center justify-between px-8 bg-background/50 backdrop-blur-md relative z-10">
-          <div className="flex flex-col">
-             <h2 className="font-bold">گفتوگۆ</h2>
-             <div className="flex items-center gap-2 mt-0.5">
-               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-               <span className="text-[10px] font-mono-kd text-[oklch(0.45_0.03_245)]">online</span>
-             </div>
+        {/* Header */}
+        <div style={{
+          padding: '0 24px', height: 64, borderBottom: '3px solid #1C1A17',
+          display: 'flex', alignItems: 'center', gap: 16,
+          background: '#EDE0C5', position: 'relative', flexShrink: 0,
+        }}>
+          {!sidebarOpen && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1C1A17', padding: 4 }}
+            >
+              <Menu size={20} />
+            </button>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Stamp label="شتی" rotate="-8deg" size={48} />
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 17, color: '#1C1A17', fontFamily: 'Vazirmatn' }}>گفتوگۆ</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#6B7341', border: '1.5px solid #1C1A17', animation: 'blink 2s ease-in-out infinite' }} />
+                <span style={{ fontSize: 10, color: '#6B7341', fontWeight: 700, letterSpacing: '0.1em' }}>ئۆنلاین</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-6 relative z-10 scroll-smooth">
+        {/* Messages */}
+        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
           {messages.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50">
-              <div className="w-20 h-20 rounded-3xl flex items-center justify-center bg-[oklch(0.30_0.04_250/0.2)]">
-                <Bot size={40} className="text-[oklch(0.78_0.22_235)]" />
-              </div>
-              <h3 className="text-xl font-bold">چۆن دەتوانم یارمەتیت بدەم؟</h3>
+            <div style={{ margin: 'auto', textAlign: 'center', padding: 40 }}>
+              <HandFrame tilt="-1deg">
+                <div style={{ padding: '32px 40px', background: '#EDE0C5', border: '3px solid #1C1A17', boxShadow: '-8px 8px 0 0 #1C1A17', position: 'relative' }}>
+                  <Tape top="-10px" right="25%" rotate="-3deg" />
+                  <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+                    <Stamp label="شتی" rotate="5deg" size={80} />
+                  </div>
+                  <h3 style={{ fontSize: 22, fontWeight: 800, color: '#1C1A17', marginBottom: 8, fontFamily: 'Vazirmatn' }}>
+                    بەخێربێیت بۆ شتی
+                  </h3>
+                  <p style={{ fontSize: 13, color: '#6B7341', fontWeight: 500, fontFamily: 'Vazirmatn' }}>
+                    پرسیارەکەت لێرە بنووسە…
+                  </p>
+                  {/* Squiggle underline */}
+                  <div style={{ marginTop: 8 }}>
+                    <Squiggle color="#B5462E" />
+                  </div>
+                </div>
+              </HandFrame>
             </div>
           )}
 
           {messages.map((m, i) => (
-            <div key={i} className={cn("flex w-full max-w-4xl", m.role === 'user' ? "mr-auto flex-row-reverse" : "ml-auto")}>
-              <div className={cn("w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center", m.role === 'user' ? "ml-4 bg-[oklch(0.78_0.22_235/0.2)]" : "mr-4 glass")}>
-                {m.role === 'user' ? <User size={20} className="text-[oklch(0.78_0.22_235)]" /> : <Bot size={20} />}
+            <div key={i} style={{
+              display: 'flex',
+              flexDirection: m.role === 'user' ? 'row' : 'row-reverse',
+              alignItems: 'flex-start', gap: 12,
+              maxWidth: '75%',
+              alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+            }}>
+              {/* Avatar */}
+              <div style={{
+                width: 36, height: 36, flexShrink: 0,
+                border: '2.5px solid #1C1A17',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'Vazirmatn', fontWeight: 800, fontSize: 14,
+                background: m.role === 'user' ? '#B5462E' : '#EDE0C5',
+                color: m.role === 'user' ? '#F0E6D0' : '#1C1A17',
+                transform: `rotate(${m.role === 'user' ? '1deg' : '-1deg'})`,
+                boxShadow: m.role === 'user' ? '-3px 3px 0 0 #1C1A17' : '-3px 3px 0 0 #1C1A17',
+              }}>
+                {m.role === 'user' ? 'ب' : 'ش'}
               </div>
-              <div className={cn("p-4 rounded-2xl text-sm leading-relaxed", m.role === 'user' ? "bg-[oklch(0.78_0.22_235)] text-[oklch(0.10_0.05_255)] font-medium" : "glass text-foreground")}>
+
+              {/* Bubble */}
+              <div style={{
+                padding: '12px 16px',
+                background: m.role === 'user' ? '#F0E6D0' : '#EDE0C5',
+                border: `2.5px solid ${m.role === 'user' ? '#B5462E' : '#1C1A17'}`,
+                boxShadow: m.role === 'user'
+                  ? '-5px 5px 0 0 #B5462E'
+                  : '-5px 5px 0 0 #1C1A17',
+                fontSize: 14, lineHeight: 1.7,
+                fontFamily: 'Vazirmatn', color: '#1C1A17',
+                transform: `rotate(${m.role === 'user' ? '0.5deg' : '-0.5deg'})`,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}>
                 {m.content}
               </div>
             </div>
           ))}
 
           {loading && (
-             <div className="flex w-full max-w-4xl ml-auto">
-               <div className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center glass mr-4"><Bot size={20} /></div>
-               <div className="glass p-4 rounded-2xl flex items-center gap-1.5">
-                 <div className="w-1.5 h-1.5 rounded-full bg-[oklch(0.78_0.22_235)] animate-bounce" style={{ animationDelay: '0ms' }} />
-                 <div className="w-1.5 h-1.5 rounded-full bg-[oklch(0.78_0.22_235)] animate-bounce" style={{ animationDelay: '150ms' }} />
-                 <div className="w-1.5 h-1.5 rounded-full bg-[oklch(0.78_0.22_235)] animate-bounce" style={{ animationDelay: '300ms' }} />
-               </div>
-             </div>
+            <div style={{ display: 'flex', flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 12, maxWidth: '75%', alignSelf: 'flex-start' }}>
+              <div style={{ width: 36, height: 36, flexShrink: 0, border: '2.5px solid #1C1A17', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Vazirmatn', fontWeight: 800, fontSize: 14, background: '#EDE0C5', color: '#1C1A17', transform: 'rotate(-1deg)', boxShadow: '-3px 3px 0 0 #1C1A17' }}>ش</div>
+              <div style={{ padding: '14px 20px', background: '#EDE0C5', border: '2.5px solid #1C1A17', boxShadow: '-5px 5px 0 0 #1C1A17', display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn', marginLeft: 4 }}>شتی لە وەڵامدانەدایە…</span>
+                {[0, 1, 2].map(d => (
+                  <div key={d} style={{ width: 8, height: 8, background: '#1C1A17', borderRadius: '50%' }} className={`dot-${d + 1}`} />
+                ))}
+              </div>
+            </div>
           )}
         </div>
 
-        <div className="p-8 relative z-10">
-          <div className="max-w-4xl mx-auto relative">
+        {/* Composer */}
+        <div style={{ padding: '0 32px 24px', position: 'relative', flexShrink: 0 }}>
+          {/* Washi tape across top */}
+          <div style={{
+            position: 'absolute', top: -8, left: 60, right: 60, height: 16,
+            background: 'rgba(212,165,58,0.45)',
+            border: '1px solid rgba(212,165,58,0.7)',
+            backgroundImage: 'repeating-linear-gradient(90deg, transparent 0px, transparent 10px, rgba(255,255,255,0.2) 10px, rgba(255,255,255,0.2) 12px)',
+          }} />
+
+          <div style={{ display: 'flex', gap: 0, border: '3px solid #1C1A17', boxShadow: '-6px 6px 0 0 #1C1A17', background: '#F0E6D0', marginTop: 16 }}>
             <textarea
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-              placeholder="پرسیارەکەت لێرە بنووسە..."
-              rows={1}
-              className="w-full glass rounded-2xl py-4 pr-6 pl-16 outline-none focus:border-[oklch(0.78_0.22_235/0.5)] transition-all resize-none text-sm"
-              style={{ minHeight: '56px', maxHeight: '200px' }}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
+              placeholder="پەیامەکەت لێرە بنووسە…"
+              rows={2}
+              style={{
+                flex: 1, padding: '14px 18px', background: 'transparent', border: 'none',
+                fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17', lineHeight: 1.6,
+                minHeight: 56, maxHeight: 160, resize: 'none',
+              }}
             />
-            <button onClick={handleSend} disabled={loading || !input.trim()} title="Send Message" className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center transition-all disabled:opacity-30" style={{ background: 'oklch(0.78 0.22 235)', color: 'oklch(0.10 0.05 255)' }}>
-              <Send size={18} />
+            <button
+              onClick={handleSend}
+              disabled={loading || !input.trim()}
+              className="press-effect"
+              style={{
+                padding: '0 20px', background: loading || !input.trim() ? '#C8A882' : '#B5462E',
+                border: 'none', borderRight: '3px solid #1C1A17',
+                cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
+                color: '#F0E6D0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background 0.15s',
+                flexShrink: 0,
+              }}
+            >
+              <Send size={20} style={{ transform: 'scaleX(-1)' }} />
             </button>
           </div>
-          <p className="text-center text-[10px] text-[oklch(0.45_0.03_245)] mt-3">
-            شوتی ژیری دەستکردە و لەوانەیە هەڵە بکات
-          </p>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, padding: '0 4px' }}>
+            <p style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn', fontWeight: 600 }}>
+              شتی ژیری دەستکردە — لەوانەیە هەڵە بکات
+            </p>
+            <p style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn' }}>
+              {toArabicDigits(input.length)} پیت
+            </p>
+          </div>
         </div>
       </div>
 
-      <Modal 
+      <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onConfirm={confirmDelete}

@@ -1,176 +1,125 @@
-@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
-/* ─── Design Tokens (OKLCH) ─────────────────────────────── */
+/* ─── Design Tokens ─────────────────────────────────────── */
 :root {
-  --background: oklch(0.15 0.04 250);
-  --foreground: oklch(0.95 0.01 240);
-  --deep:       oklch(0.10 0.05 255);
-  --card:       oklch(0.20 0.05 250);
-  --muted:      oklch(0.45 0.03 245);
-  --muted-foreground: oklch(0.65 0.02 240);
-  --border:     oklch(0.30 0.04 250);
-  --primary:    oklch(0.55 0.25 240);
-  --electric:   oklch(0.78 0.22 235);
-  --glow:       oklch(0.85 0.15 220);
-  --rust:       oklch(0.65 0.18 50);
-
-  --font-vazirmatn: 'Vazirmatn', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --paper:   #F0E6D0;
+  --ink:     #1C1A17;
+  --rust:    #B5462E;
+  --mustard: #D4A53A;
+  --olive:   #6B7341;
+  --font-sans: 'Vazirmatn', sans-serif;
 }
 
-/* ─── Base ──────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; }
+@theme inline {
+  --color-paper:   var(--paper);
+  --color-ink:     var(--ink);
+  --color-rust:    var(--rust);
+  --color-mustard: var(--mustard);
+  --color-olive:   var(--olive);
+  --font-family-sans: var(--font-sans);
+}
 
+/* ─── Reset ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
+/* ─── Base Body — Paper Feel ────────────────────────────── */
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-vazirmatn), sans-serif;
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
   direction: rtl;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  position: relative;
 }
 
-/* ─── Tailwind v4 Custom Properties ─────────────────────── */
-@theme {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-deep:       var(--deep);
-  --color-card:       var(--card);
-  --color-muted:      var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border:     var(--border);
-  --color-primary:    var(--primary);
-  --color-electric:   var(--electric);
-  --color-glow:       var(--glow);
-  --color-rust:       var(--rust);
-  --font-family-vazirmatn: var(--font-vazirmatn);
-  --font-family-mono: var(--font-mono);
-}
-
-/* ─── Textures ──────────────────────────────────────────── */
-.texture-grid {
-  background-image:
-    repeating-linear-gradient(
-      0deg,
-      oklch(0.78 0.22 235 / 0.04) 0px,
-      oklch(0.78 0.22 235 / 0.04) 1px,
-      transparent 1px,
-      transparent 40px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      oklch(0.78 0.22 235 / 0.04) 0px,
-      oklch(0.78 0.22 235 / 0.04) 1px,
-      transparent 1px,
-      transparent 40px
-    );
-}
-
-.texture-grid-fade {
-  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
-  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
-}
-
-.texture-grain::after {
+/* Paper grain texture — layer 1 */
+body::before {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 0;
   pointer-events: none;
-  opacity: 0.045;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  background-size: 200px 200px;
+  mix-blend-mode: multiply;
+  opacity: 0.08;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
 }
 
-.texture-scanlines::before {
+/* Warm fiber blotches — layer 2 */
+body::after {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: 99;
+  z-index: 0;
   pointer-events: none;
-  background-image: repeating-linear-gradient(
-    180deg,
-    transparent 0px,
-    transparent 2px,
-    oklch(0 0 0 / 0.04) 2px,
-    oklch(0 0 0 / 0.04) 4px
-  );
+  mix-blend-mode: multiply;
+  opacity: 0.10;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.02' numOctaves='3' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='40'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%23C8A882' filter='url(%23f)'/%3E%3C/svg%3E");
+  background-size: 400px 400px;
 }
 
-/* ─── Aurora ─────────────────────────────────────────────── */
-.aurora {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(100px);
-  pointer-events: none;
+/* ─── Brutal Shadow Utilities ───────────────────────────── */
+.shadow-brutal-sm  { box-shadow: -4px 4px 0 0 var(--ink); }
+.shadow-brutal-md  { box-shadow: -6px 6px 0 0 var(--ink); }
+.shadow-brutal-lg  { box-shadow: -8px 8px 0 0 var(--ink); }
+.shadow-brutal-rust { box-shadow: -6px 6px 0 0 var(--rust); }
+.shadow-brutal-mustard { box-shadow: -5px 5px 0 0 var(--mustard); }
+
+/* ─── Interactive Press Effect ──────────────────────────── */
+.press-effect {
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
-.aurora-1 {
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, oklch(0.78 0.22 235 / 0.18) 0%, transparent 70%);
+.press-effect:hover {
+  transform: translate(-3px, 3px);
+  box-shadow: -3px 3px 0 0 var(--ink) !important;
 }
-.aurora-2 {
-  width: 500px; height: 500px;
-  background: radial-gradient(circle, oklch(0.85 0.15 220 / 0.12) 0%, transparent 70%);
+.press-effect:active {
+  transform: translate(-1px, 1px);
+  box-shadow: -2px 2px 0 0 var(--ink) !important;
 }
 
-/* ─── Glass ──────────────────────────────────────────────── */
-.glass {
-  background: oklch(0.20 0.05 250 / 0.5);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid oklch(0.30 0.04 250 / 0.6);
-}
-
-/* ─── Typography Effects ─────────────────────────────────── */
-.gradient-text {
-  background: linear-gradient(135deg, var(--foreground) 30%, var(--electric));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.glow-text {
-  text-shadow:
-    0 0 20px oklch(0.78 0.22 235 / 0.8),
-    0 0 60px oklch(0.78 0.22 235 / 0.4);
+/* ─── Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--paper); }
+::-webkit-scrollbar-thumb {
+  background: var(--ink);
+  border-radius: 0;
 }
 
 /* ─── Animations ─────────────────────────────────────────── */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-18px); }
-}
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px oklch(0.78 0.22 235 / 0.3); }
-  50%       { box-shadow: 0 0 50px oklch(0.78 0.22 235 / 0.7), 0 0 100px oklch(0.78 0.22 235 / 0.3); }
-}
-@keyframes spin-slow-cw  { from { transform: rotate(0deg);   } to { transform: rotate(360deg);  } }
-@keyframes spin-slow-ccw { from { transform: rotate(0deg);   } to { transform: rotate(-360deg); } }
-@keyframes pulse-dot {
+@keyframes blink {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.2; }
 }
-@keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position:  200% center; }
+@keyframes tilt-sway {
+  0%, 100% { transform: rotate(-1.5deg); }
+  50%       { transform: rotate(0.5deg); }
+}
+@keyframes ink-drop {
+  0%   { transform: scaleY(0); opacity: 0; }
+  100% { transform: scaleY(1); opacity: 1; }
 }
 
-.animate-float        { animation: float 6s ease-in-out infinite; }
-.animate-pulse-glow   { animation: pulse-glow 3s ease-in-out infinite; }
-.animate-spin-slow    { animation: spin-slow-cw  60s linear infinite; }
-.animate-spin-slow-r  { animation: spin-slow-ccw 45s linear infinite; }
-.animate-pulse-dot    { animation: pulse-dot 2s ease-in-out infinite; }
+.animate-blink      { animation: blink 1.2s ease-in-out infinite; }
+.animate-tilt-sway  { animation: tilt-sway 4s ease-in-out infinite; }
+.animate-ink-drop   { animation: ink-drop 0.2s ease-out forwards; }
 
-/* ─── Scrollbar ──────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: oklch(0.30 0.04 250);
-  border-radius: 9999px;
+/* ─── Typing dots ─────────────────────────────────────────── */
+.dot-1 { animation: blink 1.2s ease-in-out infinite 0ms; }
+.dot-2 { animation: blink 1.2s ease-in-out infinite 200ms; }
+.dot-3 { animation: blink 1.2s ease-in-out infinite 400ms; }
+
+/* ─── Textarea reset ─────────────────────────────────────── */
+textarea {
+  resize: none;
+  font-family: var(--font-sans);
 }
-::-webkit-scrollbar-thumb:hover { background: oklch(0.45 0.03 245); }
+textarea:focus { outline: none; }
 
-/* ─── Mono utility ───────────────────────────────────────── */
-.font-mono-kd { font-family: var(--font-mono); }
+/* ─── Wobbly SVG frame helper ────────────────────────────── */
+.hand-frame {
+  position: relative;
+}
