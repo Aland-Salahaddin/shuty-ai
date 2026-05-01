@@ -92,7 +92,7 @@ export async function POST(req: Request) {
       if (responseText) break;
       for (const model of OPENROUTER_MODELS) {
         try {
-          const response = await fetch("https://openrouter.ai/ai/v1/chat/completions", {
+          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${key}`,
