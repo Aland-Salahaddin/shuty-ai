@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -36,7 +36,7 @@ function Tape() {
   )
 }
 
-export default function AuthPage() {
+function AuthContent() {
   const searchParams = useSearchParams()
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login'
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode)
@@ -253,5 +253,17 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0E6D0' }}>
+        <p style={{ fontFamily: 'Vazirmatn', fontWeight: 700 }}>چاوەڕوان بە...</p>
+      </div>
+    }>
+      <AuthContent />
+    </Suspense>
   )
 }
