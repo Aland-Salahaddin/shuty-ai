@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Send, LogOut, Settings as SettingsIcon, Trash2, Edit2, Check, Menu, X } from 'lucide-react'
