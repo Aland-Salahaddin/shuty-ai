@@ -450,7 +450,7 @@ export default function ChatPage() {
             <div style={{ display: 'flex', flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 12, maxWidth: '75%', alignSelf: 'flex-start' }}>
               <div style={{ width: 36, height: 36, flexShrink: 0, border: '2.5px solid #1C1A17', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Vazirmatn', fontWeight: 800, fontSize: 14, background: '#EDE0C5', color: '#1C1A17', transform: 'rotate(-1deg)', boxShadow: '-3px 3px 0 0 #1C1A17' }}>ش</div>
               <div style={{ padding: '14px 20px', background: '#EDE0C5', border: '2.5px solid #1C1A17', boxShadow: '-5px 5px 0 0 #1C1A17', display: 'flex', gap: 6, alignItems: 'center' }}>
-                <span style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn', marginLeft: 4 }}>شتی لە وەڵامدانەدایە…</span>
+                <span style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn', marginLeft: 4 }}>شوتی لە وەڵامدانەدایە…</span>
                 {[0, 1, 2].map(d => (
                   <div key={d} style={{ width: 8, height: 8, background: '#1C1A17', borderRadius: '50%' }} className={`dot-${d + 1}`} />
                 ))}
@@ -501,7 +501,7 @@ export default function ChatPage() {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, padding: '0 4px' }}>
             <p style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn', fontWeight: 600 }}>
-              شتی ژیری دەستکردە — لەوانەیە هەڵە بکات
+              شوتی ژیری دەستکردە — لەوانەیە هەڵە بکات
             </p>
             <p style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn' }}>
               {toArabicDigits(input.length)} پیت
