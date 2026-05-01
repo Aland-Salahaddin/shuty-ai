@@ -75,14 +75,10 @@ export default function SettingsPage() {
     }}>
 
       {/* Nav */}
-      <nav style={{ borderBottom: '3px solid #1C1A17', padding: '0 48px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#EDE0C5' }}>
+      <nav style={{ borderBottom: '3px solid #1C1A17', padding: '0 48px', height: 64, display: 'flex', alignItems: 'center', background: '#EDE0C5' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Settings size={18} />
           <span style={{ fontWeight: 800, fontSize: 17 }}>ڕێکخستنەکان</span>
-        </div>
-        <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-          <Link href="/chat" style={{ fontSize: 13, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>گفتوگۆ</Link>
-          <Link href="/" style={{ fontSize: 13, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>سەرەکی</Link>
         </div>
       </nav>
 
@@ -151,6 +147,28 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          {/* Pricing card */}
+          <Link href="/pricing" style={{ textDecoration: 'none' }}>
+            <div style={{
+              background: '#EDE0C5', border: '3px solid #1C1A17',
+              boxShadow: '-7px 7px 0 0 #6B7341',
+              padding: '24px', transform: 'rotate(0.3deg)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              cursor: 'pointer',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 36, height: 36, border: '2.5px solid #1C1A17', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0E6D0', fontSize: 18 }}>
+                  ✦
+                </div>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: '#1C1A17' }}>نرخەکان</div>
+                  <div style={{ fontSize: 11, color: '#6B7341', fontWeight: 500, marginTop: 2 }}>بینینی پلانەکان و بەرزکردنەوەی هەژمار</div>
+                </div>
+              </div>
+              <span style={{ fontSize: 20, color: '#6B7341', fontWeight: 800 }}>←</span>
+            </div>
+          </Link>
+
           <Squiggle color="#6B7341" />
 
           {/* Logout */}
@@ -183,6 +201,11 @@ export default function SettingsPage() {
           <div style={{ textAlign: 'center', marginTop: 8 }}>
             <Link href="/chat" style={{ fontSize: 13, color: '#6B7341', fontWeight: 600, textDecoration: 'none' }}>
               ← گەڕانەوە بۆ گفتوگۆ
+            </Link>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <Link href="/" style={{ fontSize: 12, color: '#B5462E', fontWeight: 600, textDecoration: 'none' }}>
+              ← گەڕانەوە بۆ سەرەکی
             </Link>
           </div>
         </div>
