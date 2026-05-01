@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
+import { useUser } from '@clerk/nextjs'
 import { ArrowRight, Settings as SettingsIcon, MessageSquare } from 'lucide-react'
 
 function Squiggle({ color = '#1C1A17' }: { color?: string }) {
@@ -75,9 +75,8 @@ const tiers = [
 ]
 
 export default function PricingPage() {
-  const { data: session, status } = useSession()
-  const user = session?.user
-  const loading = status === 'loading'
+  const { user, isLoaded } = useUser()
+  const loading = !isLoaded
 
   return (
     <div style={{ minHeight: '100vh', background: '#F0E6D0', color: '#1C1A17', direction: 'rtl', fontFamily: 'Vazirmatn, sans-serif', position: 'relative', zIndex: 1 }}>
