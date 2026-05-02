@@ -240,9 +240,6 @@ export default function ChatPage() {
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onloadend = () => {
     if (file) {
       const reader = new FileReader()
       reader.onloadend = () => {
