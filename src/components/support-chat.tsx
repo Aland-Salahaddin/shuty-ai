@@ -24,6 +24,8 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
   useEffect(() => {
     if (!supabase || (user && isOpen)) {
       if (!supabase) return;
+      
+      const getRoom = async () => {
         if (!user?.id) return
 
         // Find existing room
