@@ -89,7 +89,17 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
   const handleSend = async () => {
     if (!supabase || !input.trim() || !roomId || !user) return
 
-    const msgContent = input.trim()
+    const { data: messages } = await supabase.from('support_messages').select('id').eq('room_id', roomId)
+    const msgCount = messages?.length || 0
+
+    const { data: room } = await supabase.from('support_rooms').select('is_accepted').eq('id', roomId).single()
+
+    if (msgCount >= 3 && !room?.is_accepted) {
+      alert('تکایە چاوەڕێ بکە تا ئەدمین نامەکەت قبووڵ دەکات پێش ئەوەی نامەی تر بنێریت.')
+      return
+    }
+
+    const msgContent = input.trim().substring(0, 200)
     setInput('')
 
     const { error } = await supabase.from('support_messages').insert({
@@ -177,6 +187,7 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSend()}
+          maxLength={200}
           placeholder="لێرە بنووسە..."
           style={{
             flex: 1, padding: '10px 14px', background: '#F0E6D0',

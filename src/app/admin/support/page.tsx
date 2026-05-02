@@ -12,6 +12,7 @@ interface Room {
   user_email: string
   user_name: string
   last_message: string
+  is_accepted: boolean
 }
 
 interface Message {
@@ -110,6 +111,15 @@ export default function AdminSupportPage() {
       await supabase.from('support_rooms').update({ last_message: new Date().toISOString() }).eq('id', selectedRoom.id)
     }
   }
+  
+  const handleAccept = async (rid: string) => {
+    if (!supabase) return
+    const { error } = await supabase.from('support_rooms').update({ is_accepted: true }).eq('id', rid)
+    if (!error) {
+      setSelectedRoom(prev => prev ? { ...prev, is_accepted: true } : null)
+      fetchRooms()
+    }
+  }
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -167,11 +177,33 @@ export default function AdminSupportPage() {
             {/* Room Header */}
             <div style={{ padding: '20px 32px', borderBottom: '3px solid #1C1A17', background: '#F0E6D0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <h2 style={{ fontSize: 18, fontWeight: 900, margin: 0 }}>{selectedRoom.user_name}</h2>
+                <h2 style={{ fontSize: 18, fontWeight: 900, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {selectedRoom.user_name}
+                  {selectedRoom.is_accepted ? (
+                    <span style={{ fontSize: 10, background: '#6B7341', color: '#F0E6D0', padding: '2px 8px', borderRadius: 4 }}>ACCEPTED</span>
+                  ) : (
+                    <span style={{ fontSize: 10, background: '#B5462E', color: '#F0E6D0', padding: '2px 8px', borderRadius: 4 }}>PENDING</span>
+                  )}
+                </h2>
                 <p style={{ fontSize: 12, color: '#6B7341', fontWeight: 700 }}>{selectedRoom.user_email}</p>
               </div>
-              <div style={{ background: '#EDE0C5', border: '2px solid #1C1A17', padding: '6px 12px', fontSize: 10, fontWeight: 800 }}>
-                ID: {selectedRoom.user_id}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {!selectedRoom.is_accepted && (
+                  <button 
+                    onClick={() => handleAccept(selectedRoom.id)}
+                    style={{
+                      background: '#D4A53A', color: '#1C1A17', border: '3px solid #1C1A17',
+                      padding: '8px 16px', fontWeight: 900, cursor: 'pointer',
+                      boxShadow: '-3px 3px 0 #1C1A17'
+                    }}
+                    className="press-effect"
+                  >
+                    Accept Request
+                  </button>
+                )}
+                <div style={{ background: '#EDE0C5', border: '2px solid #1C1A17', padding: '6px 12px', fontSize: 10, fontWeight: 800 }}>
+                  ID: {selectedRoom.user_id}
+                </div>
               </div>
             </div>
 
