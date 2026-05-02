@@ -135,7 +135,7 @@ export default function ChatPage() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const { user, isLoaded } = useUser()
-  const { signOut } = useClerk()
+  const clerk = useClerk()
   const authLoading = !isLoaded
 
 
@@ -235,7 +235,7 @@ export default function ChatPage() {
   const startNewChat = () => { setSessionId(newSessionId()); setMessages([]) }
   const selectSession = (sid: string) => { setSessionId(sid); fetchMessages(sid) }
   const handleLogout = async () => {
-    await signOut({ redirectUrl: '/' })
+    await clerk.signOut({ redirectUrl: '/' })
   }
 
 
