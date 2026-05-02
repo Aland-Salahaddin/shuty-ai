@@ -4,12 +4,13 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Send, LogOut, Settings as SettingsIcon, Trash2, Edit2, Check, Menu, X } from 'lucide-react'
+import { Plus, Send, LogOut, Settings as SettingsIcon, Trash2, Edit2, Check, Menu, X, Rocket } from 'lucide-react'
 import Modal from '@/components/Modal'
 import { newSessionId } from '@/lib/utils'
 import { useUser, useClerk, UserButton } from '@clerk/nextjs'
 import { SupportChat } from '@/components/support-chat'
 import { SHUTY_CONFIG } from '@/lib/shuty-config'
+import Link from 'next/link'
 
 
 /* Parse **bold** and *italic* markdown inline */
@@ -365,6 +366,33 @@ export default function ChatPage() {
             کڕینی پڕۆ (چاتی ڕاستەوخۆ)
           </button>
 
+          {/* PRICING LINK */}
+          <Link 
+            href="/pricing"
+            className="press-effect"
+            style={{
+              width: '100%',
+              padding: '10px',
+              background: '#D4A53A',
+              color: '#1C1A17',
+              border: '2.5px solid #1C1A17',
+              boxShadow: '-3px 3px 0 0 #1C1A17',
+              marginBottom: 12,
+              cursor: 'pointer',
+              fontFamily: 'Vazirmatn',
+              fontWeight: 800,
+              fontSize: 13,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              textDecoration: 'none'
+            }}
+          >
+            <Rocket size={16} />
+            پلانەکان و نرخەکان
+          </Link>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px' }}>
             <div 
               onClick={() => clerk.openUserProfile()}
@@ -397,6 +425,25 @@ export default function ChatPage() {
                 )}
               </div>
             </div>
+            
+            {/* LOGOUT BUTTON */}
+            <button 
+              onClick={() => clerk.signOut({ redirectUrl: '/' })}
+              style={{
+                background: 'none',
+                border: '2px solid #1C1A17',
+                padding: '6px',
+                cursor: 'pointer',
+                color: '#B5462E',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '-2px 2px 0 0 #1C1A17'
+              }}
+              title="چوونە دەرەوە"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
       </div>
