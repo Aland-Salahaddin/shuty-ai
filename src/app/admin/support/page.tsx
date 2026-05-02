@@ -55,6 +55,7 @@ export default function AdminSupportPage() {
   }, [user])
 
   const fetchRooms = async () => {
+    if (!supabase) return;
     const { data } = await supabase
       .from('support_rooms')
       .select('*')
@@ -94,7 +95,7 @@ export default function AdminSupportPage() {
 
   // 4. Send Message
   const handleSend = async () => {
-    if (!input.trim() || !selectedRoom || !user) return
+    if (!supabase || !input.trim() || !selectedRoom || !user) return
     const msgContent = input.trim()
     setInput('')
 

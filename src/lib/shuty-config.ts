@@ -6,7 +6,7 @@
 export const SHUTY_CONFIG = {
   // --- FREE PLAN SETTINGS ---
   FREE: {
-    maxMessagesPerDay: 10,           // Number of free messages per 24h
+    maxMessagesPerDay: 30,           // Number of free messages per 24h
     model: 'google/gemini-2.0-flash-001', // Faster, cheaper model for free users
     hasSearch: true,                // Does free plan have web search?
     hasImageGen: false,             // Does free plan have image generation? (If added later)

@@ -242,7 +242,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               socialButtonsVariant: 'blockButton',
               shimmer: true,
               hideBranding: true,
-              unsafe_disableDevelopmentModeWarnings: true,
             },
 
             variables: {

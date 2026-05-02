@@ -1,7 +1,11 @@
-import { supabaseAdmin } from './supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { SHUTY_CONFIG } from './shuty-config';
 
 export async function getOrCreateProfile(clerkId: string, email?: string) {
+  if (!supabaseAdmin) {
+    console.error('Supabase Admin client not initialized. Check your environment variables.');
+    return null;
+  }
   // 1. Try to get existing profile
   const { data: profile, error } = await supabaseAdmin
     .from('profiles')
@@ -52,6 +56,7 @@ export async function getOrCreateProfile(clerkId: string, email?: string) {
 }
 
 export async function incrementMessageCount(clerkId: string) {
+  if (!supabaseAdmin) return;
   const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('messages_sent')

@@ -21,7 +21,8 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
 
   // 1. Get or Create Support Room
   useEffect(() => {
-    if (user && isOpen) {
+    if (!supabase || (user && isOpen)) {
+      if (!supabase) return;
       const getRoom = async () => {
         // Find existing room
         const { data: existing } = await supabase
@@ -86,7 +87,7 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
 
   // 4. Send Message
   const handleSend = async () => {
-    if (!input.trim() || !roomId || !user) return
+    if (!supabase || !input.trim() || !roomId || !user) return
 
     const msgContent = input.trim()
     setInput('')

@@ -361,7 +361,7 @@ export default function ChatPage() {
               gap: 10,
             }}
           >
-            <div style={{ width: 8, height: 8, background: '#F0E6D0', borderRadius: '50%', boxShadow: '0 0 8px #F0E6D0' }} />
+            <div className="live-pulse" style={{ width: 8, height: 8, background: '#F0E6D0', borderRadius: '50%' }} />
             کڕینی پڕۆ (چاتی ڕاستەوخۆ)
           </button>
 
@@ -376,7 +376,18 @@ export default function ChatPage() {
               <div style={{ fontSize: 12, fontWeight: 800, color: '#1C1A17', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user?.fullName || 'بەکارهێنەر'}
               </div>
-              <div style={{ fontSize: 10, color: '#6B7341', fontWeight: 600 }}>بەکارهێنەری {isPro ? 'Pro' : 'خۆڕایی'}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 10, color: '#6B7341', fontWeight: 600 }}>بەکارهێنەری {isPro ? 'Pro' : 'خۆڕایی'}</div>
+                {user?.primaryEmailAddress?.emailAddress === 'alandkurd485@gmail.com' && (
+                  <a href="/admin/support" style={{ 
+                    fontSize: 10, color: '#B5462E', fontWeight: 900, textDecoration: 'none',
+                    background: '#F0E6D0', padding: '1px 4px', border: '1px solid #1C1A17',
+                    boxShadow: '-1px 1px 0 #1C1A17'
+                  }}>
+                    ADMIN
+                  </a>
+                )}
+              </div>
             </div>
             <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#1C1A17', cursor: 'pointer', padding: 4 }} title="Logout">
               <LogOut size={16} />
@@ -534,6 +545,20 @@ export default function ChatPage() {
               <Send size={20} style={{ transform: 'scaleX(-1)' }} />
             </button>
           </div>
+          <style>{`
+            .press-effect:active {
+              transform: translate(2px, 2px);
+              box-shadow: 0 0 0 0 transparent !important;
+            }
+            @keyframes pulse-glow {
+              0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(240, 230, 208, 0.7); }
+              70% { transform: scale(1.2); opacity: 0.8; box-shadow: 0 0 0 10px rgba(240, 230, 208, 0); }
+              100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(240, 230, 208, 0); }
+            }
+            .live-pulse {
+              animation: pulse-glow 2s infinite;
+            }
+          `}</style>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, padding: '0 4px' }}>
             <p style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn', fontWeight: 600 }}>
