@@ -9,6 +9,7 @@ import Modal from '@/components/Modal'
 import { newSessionId } from '@/lib/utils'
 import { useUser, useClerk, UserButton } from '@clerk/nextjs'
 import { SupportChat } from '@/components/support-chat'
+import { Suspense } from 'react'
 import { SHUTY_CONFIG } from '@/lib/shuty-config'
 import Link from 'next/link'
 
@@ -156,7 +157,7 @@ interface Message { role: 'user' | 'assistant'; content: string; image?: string 
 interface Session { id: string; title: string; created_at: string }
 
 /* ── Main Component ─────────────────────────────────────── */
-export default function ChatPage() {
+function ChatContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -827,5 +828,17 @@ export default function ChatPage() {
       {/* SUPPORT CHAT MODAL */}
       <SupportChat isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} />
     </div>
+  )
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', background: '#F0E6D0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <RefreshCcw className="animate-spin" size={48} />
+      </div>
+    }>
+      <ChatContent />
+    </Suspense>
   )
 }
