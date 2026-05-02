@@ -383,7 +383,9 @@ export default function ChatPage() {
                 {user?.fullName || 'بەکارهێنەر'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ fontSize: 10, color: '#6B7341', fontWeight: 600 }}>بەکارهێنەری {isPro ? 'Pro' : 'خۆڕایی'}</div>
+                <div style={{ fontSize: 10, color: '#6B7341', fontWeight: 600 }}>
+                  بەکارهێنەری {user?.publicMetadata?.plan === 'ULTRA' ? 'Ultra' : (user?.publicMetadata?.plan === 'PRO' ? 'Pro' : 'خۆڕایی')}
+                </div>
                 {user?.primaryEmailAddress?.emailAddress === 'alandkurd485@gmail.com' && (
                   <a href="/admin/support" onClick={(e) => e.stopPropagation()} style={{ 
                     fontSize: 10, color: '#B5462E', fontWeight: 900, textDecoration: 'none',
@@ -526,6 +528,7 @@ export default function ChatPage() {
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
               placeholder="پەیامەکەت لێرە بنووسە…"
               rows={2}
+              maxLength={user?.publicMetadata?.plan === 'ULTRA' ? SHUTY_CONFIG.ULTRA.maxCharacters : (user?.publicMetadata?.plan === 'PRO' ? SHUTY_CONFIG.PRO.maxCharacters : SHUTY_CONFIG.FREE.maxCharacters)}
               style={{
                 flex: 1, padding: '14px 18px', background: 'transparent', border: 'none',
                 fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17', lineHeight: 1.6,
@@ -567,8 +570,8 @@ export default function ChatPage() {
             <p style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn', fontWeight: 600 }}>
               شوتی ژیری دەستکردە — لەوانەیە هەڵە بکات
             </p>
-            <p style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn' }}>
-              {toArabicDigits(input.length)} پیت
+            <p style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn', fontWeight: 800 }}>
+              {toArabicDigits(input.length)} / {toArabicDigits(user?.publicMetadata?.plan === 'ULTRA' ? SHUTY_CONFIG.ULTRA.maxCharacters : (user?.publicMetadata?.plan === 'PRO' ? SHUTY_CONFIG.PRO.maxCharacters : SHUTY_CONFIG.FREE.maxCharacters))} پیت
             </p>
           </div>
         </div>
