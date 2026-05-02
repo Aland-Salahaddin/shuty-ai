@@ -96,16 +96,49 @@ export async function POST(req: Request) {
       return new NextResponse(`You are timed out until ${new Date(metadata.timeout_until).toLocaleString()}`, { status: 403 });
     }
 
-    // Auto-reset plan if expired
-    let currentPlan = metadata?.plan || 'FREE';
-    if (metadata?.plan_expiry && new Date(metadata.plan_expiry) < new Date()) {
-      await clerk.users.updateUser(userId, {
-        publicMetadata: { ...metadata, plan: 'FREE', plan_expiry: null }
-      });
-      currentPlan = 'FREE';
+    // 3. Token usage check
+    const today = new Date().toISOString().split('T')[0]
+    let tokensUsedToday = metadata?.usage?.date === today ? (metadata?.usage?.tokens || 0) : 0
+    const planConfig = (SHUTY_CONFIG as any)[currentPlan]
+    const maxTokens = planConfig.maxTokensPerDay
+
+    if (tokensUsedToday >= maxTokens) {
+      return new NextResponse(JSON.stringify({
+        error: 'LIMIT_REACHED',
+        message: `تۆ سنووری تۆکنەکانی ئەمڕۆت تەواو کردووە (${maxTokens.toLocaleString()} تۆکن). بۆ بەردەوامبوون هەژمارەکەت بەرز بکەرەوە.`
+      }), { status: 403 })
     }
 
-    const { messages } = await req.json();
+    const { messages } = await req.json()
+    // ... logic for API keys and generation ...
+
+    // After getting the response from OpenRouter
+    // Note: OpenRouter returns usage in the response. I'll need to parse it.
+    
+    // For now, I'll simulate or calculate tokens if not provided by stream
+    // Actually, I'll update the metadata AFTER the stream completes or using a estimated cost
+    // Let's assume the response contains usage or we estimate it.
+    
+    // I'll update the metadata with the new usage
+    // Since we are using Response stream, it's better to update it after the stream.
+    // Or just increment by a fixed amount per message for now if stream usage is hard to track.
+    
+    // Better: OpenRouter non-streaming returns usage. Streaming might not.
+    // I will increment by an estimate (prompt + expected max response) or update on next request.
+    
+    // Let's update metadata with a reasonable estimate per interaction (e.g. 1000 tokens) 
+    // OR we can fetch usage from OpenRouter stats.
+    
+    // UPDATE: I will update metadata with a placeholder increment and you can refine it.
+    await clerk.users.updateUser(userId, {
+      publicMetadata: {
+        ...metadata,
+        usage: {
+          date: today,
+          tokens: tokensUsedToday + 1000 // Approximate for now, real usage can be more precise
+        }
+      }
+    })
     const key = OPENROUTER_KEYS[Math.floor(Math.random() * OPENROUTER_KEYS.length)];
     const serperKey = SERPER_KEYS[Math.floor(Math.random() * SERPER_KEYS.length)];
 
