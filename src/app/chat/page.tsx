@@ -3,8 +3,8 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
-import { Plus, Send, LogOut, Settings as SettingsIcon, Trash2, Edit2, Check, Menu, X, Rocket } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Plus, Send, LogOut, Settings as SettingsIcon, Trash2, Edit2, Check, Menu, X, Rocket, Image as ImageIcon, ShieldAlert, RefreshCcw, ChevronDown } from 'lucide-react'
 import Modal from '@/components/Modal'
 import { newSessionId } from '@/lib/utils'
 import { useUser, useClerk, UserButton } from '@clerk/nextjs'
@@ -13,18 +13,54 @@ import { SHUTY_CONFIG } from '@/lib/shuty-config'
 import Link from 'next/link'
 
 
-/* Parse **bold** and *italic* markdown inline */
+/* Improved markdown parser to handle code blocks, bold, and italic */
 function renderMarkdown(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g)
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} style={{ fontWeight: 800 }}>{part.slice(2, -2)}</strong>
+  // First, handle code blocks (```)
+  const codeBlockParts = text.split(/(```[\s\S]*?```)/g);
+  
+  return codeBlockParts.map((part, i) => {
+    if (part.startsWith('```') && part.endsWith('```')) {
+      const code = part.slice(3, -3).trim();
+      const langMatch = code.match(/^\w+/);
+      const language = langMatch ? langMatch[0] : '';
+      const codeContent = language ? code.slice(language.length).trim() : code;
+      
+      return (
+        <div key={i} style={{ 
+          margin: '12px 0', 
+          background: '#1C1A17', 
+          color: '#F0E6D0', 
+          border: '2px solid #1C1A17',
+          boxShadow: '-4px 4px 0 0 #D4A53A',
+          fontFamily: 'monospace',
+          fontSize: 12,
+          position: 'relative',
+          direction: 'ltr',
+          textAlign: 'left'
+        }}>
+          <div style={{ background: '#333', padding: '4px 10px', fontSize: 10, display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #444' }}>
+            <span>{language || 'code'}</span>
+            <span style={{ cursor: 'pointer', opacity: 0.7 }} onClick={() => navigator.clipboard.writeText(codeContent)}>کۆپی</span>
+          </div>
+          <pre style={{ padding: 12, margin: 0, overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
+            <code>{codeContent}</code>
+          </pre>
+        </div>
+      );
     }
-    if (part.startsWith('*') && part.endsWith('*')) {
-      return <em key={i}>{part.slice(1, -1)}</em>
-    }
-    return part
-  })
+
+    // Then, handle bold and italic for the remaining text
+    const inlineParts = part.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+    return inlineParts.map((inlinePart, j) => {
+      if (inlinePart.startsWith('**') && inlinePart.endsWith('**')) {
+        return <strong key={`${i}-${j}`} style={{ fontWeight: 900, color: '#B5462E' }}>{inlinePart.slice(2, -2)}</strong>;
+      }
+      if (inlinePart.startsWith('*') && inlinePart.endsWith('*')) {
+        return <em key={`${i}-${j}`}>{inlinePart.slice(1, -1)}</em>;
+      }
+      return inlinePart;
+    });
+  });
 }
 
 /* ── helpers ───────────────────────────────────────────── */
@@ -116,7 +152,7 @@ function HandFrame({ children, tilt = '0deg', className = '' }: {
 }
 
 /* ── Types ──────────────────────────────────────────────── */
-interface Message { role: 'user' | 'assistant'; content: string }
+interface Message { role: 'user' | 'assistant'; content: string; image?: string }
 interface Session { id: string; title: string; created_at: string }
 
 /* ── Main Component ─────────────────────────────────────── */
@@ -124,6 +160,8 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [sessionId, setSessionId] = useState('')
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(false)
@@ -132,11 +170,11 @@ export default function ChatPage() {
   const [editTitle, setEditTitle] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null)
-  const [supportOpen, setSupportOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const { user, isLoaded } = useUser()
   const clerk = useClerk()
+  const searchParams = useSearchParams()
   
   const metadata = user?.publicMetadata as any
   const isBanned = metadata?.is_banned
@@ -161,15 +199,23 @@ export default function ChatPage() {
       const sid = newSessionId()
       setSessionId(sid)
       fetchSessions()
+      
     }
   }, [user])
 
+  // Handle query params (like openSupport)
+  useEffect(() => {
+    if (isLoaded && searchParams.get('openSupport') === 'true') {
+      setIsSupportOpen(true);
+    }
+  }, [isLoaded, searchParams]);
 
+  // Scroll to bottom on messages change
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages])
+  }, [messages, loading]);
 
   const fetchSessions = async () => {
     try {
@@ -184,37 +230,83 @@ export default function ChatPage() {
     try {
       const res = await fetch(`/api/history?session_id=${sid}`)
       const data = await res.json()
-      setMessages(data.messages ? data.messages.map((m: any) => ({ role: m.role, content: m.content })) : [])
+      setMessages(data.messages ? data.messages.map((m: any) => ({ 
+        role: m.role, 
+        content: m.content,
+        image: m.image 
+      })) : [])
     } catch {}
   }
 
-  const handleSend = async () => {
-    if (!input.trim() || loading || isTimedOut) return
-    const userMsg: Message = { role: 'user', content: input }
-    setMessages(prev => [...prev, userMsg])
-    setInput('')
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onloadend = () => {
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleSend = async (retryContent?: string, retryImage?: string) => {
+    const contentToSend = retryContent !== undefined ? retryContent : input
+    const imageToSend = retryImage !== undefined ? retryImage : selectedImage
+
+    if ((!contentToSend.trim() && !imageToSend) || loading || isTimedOut) return
+    
+    const userMsg: Message = { role: 'user', content: contentToSend, image: imageToSend || undefined }
+    
+    if (retryContent === undefined) {
+      setMessages(prev => [...prev, userMsg])
+      setInput('')
+      setSelectedImage(null)
+    }
+
     setLoading(true)
     try {
-      const res = await fetch('/api/chat', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: [...messages, userMsg], sessionId }),
       })
-      const data = await res.json()
-      if (!res.ok) {
-        if (data.error === "LIMIT_REACHED") {
-          const limitMsg: Message = { role: 'assistant', content: data.message || "تۆ سنووری پەیامەکانی ئەمڕۆت تەواو کردووە. بۆ بەردەوامبوون هەژمارەکەت بکە بە Pro." };
-          setMessages(prev => [...prev, limitMsg]);
-          return;
-        }
-        throw new Error(data.message || data.error || "Failed to send");
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Chat API Error Detailed:", errorData);
+        
+        const errorMsg = errorData.message || errorData.error || "کێشەیەک لە پەیوەندی دروست بوو. تکایە دڵنیا بەرەوە کلیلەکانی API و داتابەیس جێگیر کراون.";
+        
+        const errorBubble: Message = {
+          role: 'assistant',
+          content: `❌ **هەڵە:** ${errorMsg}`,
+        };
+        setMessages(prev => [...prev, errorBubble]);
+        return;
       }
+      
+      const data = await response.json();
+      
       if (data.text) setMessages(prev => [...prev, { role: 'assistant', content: data.text }])
       fetchSessions()
     } catch (err: any) {
-      setMessages(prev => [...prev, { role: 'assistant', content: err.message || 'ببوورە، پەیوەندی پچڕا. دووبارە هەوڵ بدەرەوە.' }])
+      const errMsg = err.message || 'ببوورە، کێشەیەک لە پەیوەندی دروست بوو.';
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `❌ **هەڵە:** ${errMsg}\n\nتکایە دووبارە هەوڵ بدەرەوە یان پەیوەندیمان پێوە بکە.` 
+      }])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const retryLastMessage = () => {
+    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+    if (lastUserMsg) {
+      handleSend(lastUserMsg.content, lastUserMsg.image)
     }
   }
 
@@ -358,7 +450,7 @@ export default function ChatPage() {
           
           {/* LIVE CHAT BUTTON */}
           <button 
-            onClick={() => setSupportOpen(true)}
+            onClick={() => setIsSupportOpen(true)}
             className="press-effect"
             style={{
               width: '100%',
@@ -546,20 +638,40 @@ export default function ChatPage() {
 
               {/* Bubble */}
               <div style={{
-                padding: '12px 16px',
-                background: m.role === 'user' ? '#F0E6D0' : '#EDE0C5',
-                border: `2.5px solid ${m.role === 'user' ? '#B5462E' : '#1C1A17'}`,
-                boxShadow: m.role === 'user'
-                  ? '-5px 5px 0 0 #B5462E'
-                  : '-5px 5px 0 0 #1C1A17',
-                fontSize: 14, lineHeight: 1.7,
-                fontFamily: 'Vazirmatn', color: '#1C1A17',
+                padding: '14px 20px', 
+                background: m.content.includes('❌ **هەڵە:**') ? 'rgba(181,70,46,0.1)' : (m.role === 'user' ? '#F0E6D0' : '#EDE0C5'), 
+                border: `2.5px solid ${m.role === 'user' ? '#B5462E' : '#1C1A17'}`, 
+                boxShadow: '-5px 5px 0 0 #1C1A17',
+                fontSize: 14, lineHeight: 1.6, color: '#1C1A17',
+                fontFamily: 'Vazirmatn',
                 transform: `rotate(${m.role === 'user' ? '0.5deg' : '-0.5deg'})`,
-                wordBreak: 'break-word',
               }}>
-                {m.content.split('\n').map((line, li) => (
-                  <p key={li} style={{ margin: li === 0 ? 0 : '4px 0 0' }}>{renderMarkdown(line)}</p>
-                ))}
+                <div style={{ marginBottom: m.content.includes('❌ **هەڵە:**') ? 12 : 0 }}>
+                  {m.image && (
+                    <img 
+                      src={m.image} 
+                      alt="attachment" 
+                      style={{ 
+                        maxWidth: '100%', display: 'block', borderRadius: 6, marginBottom: 10, 
+                        border: '2px solid #1C1A17', boxShadow: '-3px 3px 0 0 #1C1A17'
+                      }} 
+                    />
+                  )}
+                  {m.content.split('\n').map((line, li) => (
+                    <p key={li} style={{ margin: li === 0 ? 0 : '4px 0 0' }}>{renderMarkdown(line)}</p>
+                  ))}
+                </div>
+                {m.content.includes('❌ **هەڵە:**') && (
+                  <button 
+                    onClick={retryLastMessage}
+                    style={{
+                      background: '#1C1A17', color: '#F0E6D0', border: 'none', padding: '6px 12px',
+                      fontSize: 11, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+                    }}
+                  >
+                    <RefreshCcw size={12} /> دووبارە هەوڵ بدەرەوە
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -568,14 +680,29 @@ export default function ChatPage() {
             <div style={{ display: 'flex', flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 12, maxWidth: '75%', alignSelf: 'flex-start' }}>
               <div style={{ width: 36, height: 36, flexShrink: 0, border: '2.5px solid #1C1A17', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Vazirmatn', fontWeight: 800, fontSize: 14, background: '#EDE0C5', color: '#1C1A17', transform: 'rotate(-1deg)', boxShadow: '-3px 3px 0 0 #1C1A17' }}>ش</div>
               <div style={{ padding: '14px 20px', background: '#EDE0C5', border: '2.5px solid #1C1A17', boxShadow: '-5px 5px 0 0 #1C1A17', display: 'flex', gap: 6, alignItems: 'center' }}>
-                <span style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn', marginLeft: 4 }}>شوتی لە وەڵامدانەدایە…</span>
+                <span style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn', marginLeft: 4 }}>شوتی خەریکی بیرکردنەوەیە…</span>
                 {[0, 1, 2].map(d => (
-                  <div key={d} style={{ width: 8, height: 8, background: '#1C1A17', borderRadius: '50%' }} className={`dot-${d + 1}`} />
+                  <div key={d} style={{ width: 6, height: 6, background: '#1C1A17', borderRadius: '50%', animation: 'dot-pulse 1.5s infinite ease-in-out', animationDelay: `${d * 0.2}s` }} />
                 ))}
               </div>
             </div>
           )}
+          <div ref={scrollRef} />
         </div>
+
+        {/* Scroll to bottom floating button */}
+        {messages.length > 5 && (
+          <button 
+            onClick={() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' })}
+            style={{
+              position: 'absolute', bottom: 120, left: 30, background: '#D4A53A', border: '2.5px solid #1C1A17',
+              width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '-4px 4px 0 0 #1C1A17', cursor: 'pointer', zIndex: 10
+            }}
+          >
+            <ChevronDown size={20} />
+          </button>
+        )}
 
         {/* Composer */}
         <div style={{ padding: '0 32px 24px', position: 'relative', flexShrink: 0 }}>
@@ -587,37 +714,80 @@ export default function ChatPage() {
             backgroundImage: 'repeating-linear-gradient(90deg, transparent 0px, transparent 10px, rgba(255,255,255,0.2) 10px, rgba(255,255,255,0.2) 12px)',
           }} />
 
-          <div style={{ display: 'flex', gap: 0, border: '3px solid #1C1A17', boxShadow: '-6px 6px 0 0 #1C1A17', background: '#F0E6D0', marginTop: 16 }}>
-            <textarea
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
-              placeholder={isTimedOut ? "ناتوانیت نامە بنێریت تا کاتەکەت تەواو دەبێت..." : "پەیامەکەت لێرە بنووسە…"}
-              rows={2}
-              disabled={isTimedOut}
-              maxLength={currentPlan === 'ULTRA' ? SHUTY_CONFIG.ULTRA.maxCharacters : (currentPlan === 'PRO' ? SHUTY_CONFIG.PRO.maxCharacters : SHUTY_CONFIG.FREE.maxCharacters)}
-              style={{
-                flex: 1, padding: '14px 18px', background: 'transparent', border: 'none',
-                fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17', lineHeight: 1.6,
-                minHeight: 56, maxHeight: 160, resize: 'none',
-                opacity: isTimedOut ? 0.5 : 1
-              }}
-            />
-            <button
-              onClick={handleSend}
-              disabled={loading || !input.trim() || isTimedOut}
-              className="press-effect"
-              style={{
-                padding: '0 20px', background: loading || !input.trim() || isTimedOut ? '#C8A882' : '#B5462E',
-                border: 'none', borderRight: '3px solid #1C1A17',
-                cursor: loading || !input.trim() || isTimedOut ? 'not-allowed' : 'pointer',
-                color: '#F0E6D0', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'background 0.15s',
-                flexShrink: 0,
-              }}
-            >
-              <Send size={20} style={{ transform: 'scaleX(-1)' }} />
-            </button>
+          <div style={{ display: 'flex', gap: 0, border: '3px solid #1C1A17', boxShadow: '-6px 6px 0 0 #1C1A17', background: '#F0E6D0', marginTop: 16, flexDirection: 'column' }}>
+            {selectedImage && (
+              <div style={{ padding: 12, borderBottom: '3px solid #1C1A17', position: 'relative', background: '#EDE0C5' }}>
+                <img src={selectedImage} alt="preview" style={{ maxHeight: 120, borderRadius: 8, border: '2px solid #1C1A17' }} />
+                <button 
+                  onClick={() => setSelectedImage(null)}
+                  style={{ position: 'absolute', top: 20, left: 20, background: '#B5462E', color: '#F0E6D0', border: '2px solid #1C1A17', borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+            <div style={{ display: 'flex' }}>
+              <input 
+                type="file" 
+                accept="image/*" 
+                ref={fileInputRef} 
+                onChange={handleImageSelect} 
+                style={{ display: 'none' }} 
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isTimedOut}
+                className="press-effect"
+                style={{
+                  padding: '0 16px', background: 'transparent', border: 'none', borderLeft: '3px solid #1C1A17',
+                  cursor: isTimedOut ? 'not-allowed' : 'pointer', color: '#1C1A17',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}
+              >
+                <ImageIcon size={20} />
+              </button>
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSend()
+                  }
+                }}
+                placeholder={isTimedOut ? "ناتوانیت نامە بنێریت تا کاتەکەت تەواو دەبێت..." : "پەیامەکەت لێرە بنووسە…"}
+                rows={2}
+                disabled={isTimedOut}
+                maxLength={currentPlan === 'ULTRA' ? SHUTY_CONFIG.ULTRA.maxCharacters : (currentPlan === 'PRO' ? SHUTY_CONFIG.PRO.maxCharacters : SHUTY_CONFIG.FREE.maxCharacters)}
+                style={{
+                  flex: 1, padding: '14px 18px', background: 'transparent', border: 'none',
+                  fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17', lineHeight: 1.6,
+                  minHeight: 56, maxHeight: 160, resize: 'none',
+                  opacity: isTimedOut ? 0.5 : 1
+                }}
+              />
+              <div style={{ 
+                position: 'absolute', bottom: -20, left: 0, fontSize: 10, fontWeight: 800, 
+                color: input.length >= ((SHUTY_CONFIG as any)[currentPlan]?.maxCharacters || 250) ? '#B5462E' : '#6B7341' 
+              }}>
+                {toArabicDigits(input.length)} / {toArabicDigits((SHUTY_CONFIG as any)[currentPlan]?.maxCharacters || 250)} پیت
+              </div>
+              <button
+                onClick={handleSend}
+                disabled={loading || (!input.trim() && !selectedImage) || isTimedOut}
+                className="press-effect"
+                style={{
+                  padding: '0 20px', background: loading || (!input.trim() && !selectedImage) || isTimedOut ? '#C8A882' : '#B5462E',
+                  border: 'none', borderRight: '3px solid #1C1A17',
+                  cursor: loading || (!input.trim() && !selectedImage) || isTimedOut ? 'not-allowed' : 'pointer',
+                  color: '#F0E6D0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'background 0.15s',
+                  flexShrink: 0,
+                }}
+              >
+                <Send size={20} style={{ transform: 'scaleX(-1)' }} />
+              </button>
+            </div>
           </div>
           <style>{`
             .press-effect:active {
@@ -631,6 +801,10 @@ export default function ChatPage() {
             }
             .live-pulse {
               animation: pulse-glow 2s infinite;
+            }
+            @keyframes dot-pulse {
+              0%, 100% { transform: scale(0.5); opacity: 0.3; }
+              50% { transform: scale(1); opacity: 1; }
             }
           `}</style>
 
@@ -653,7 +827,8 @@ export default function ChatPage() {
         message="ئایا دڵنیایت لە سڕینەوەی ئەم گفتوگۆیە؟ هەموو پەیامەکان بە یەکجاری دەسڕدرێنەوە."
       />
 
-      <SupportChat isOpen={supportOpen} onClose={() => setSupportOpen(false)} />
+      {/* SUPPORT CHAT MODAL */}
+      <SupportChat isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} />
     </div>
   )
 }

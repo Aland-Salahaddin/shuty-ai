@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { supabase } from '@/lib/supabase'
-import { Send, X, MessageSquare, ShieldCheck } from 'lucide-react'
+import { Send, X, MessageSquare, ShieldCheck, Image as ImageIcon } from 'lucide-react'
 
 interface Message {
   id: string
@@ -90,36 +90,50 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
   }, [roomId])
 
   // 4. Send Message
-  const handleSend = async () => {
-    if (!supabase || !input.trim() || !roomId || !user || isSending) return
+  const handleSend = async (imgOverride?: string) => {
+    const msgContent = input.trim().substring(0, 500)
+    const imageToSend = imgOverride || null
+
+    if (!supabase || (!msgContent && !imageToSend) || !roomId || !user || isSending) return
 
     const { data: messages } = await supabase.from('support_messages').select('id').eq('room_id', roomId)
     const msgCount = messages?.length || 0
 
     const { data: room } = await supabase.from('support_rooms').select('is_accepted').eq('id', roomId).single()
 
-    if (msgCount >= 3 && !room?.is_accepted) {
+    if (msgCount >= 5 && !room?.is_accepted) {
       alert('تکایە چاوەڕێ بکە تا ئەدمین نامەکەت قبووڵ دەکات پێش ئەوەی نامەی تر بنێریت.')
       return
     }
 
-    const msgContent = input.trim().substring(0, 200)
     setInput('')
     setIsSending(true)
 
     const { error } = await supabase.from('support_messages').insert({
       room_id: roomId,
       content: msgContent,
+      image: imageToSend,
       is_admin: false
     })
 
     if (!error) {
       await supabase.from('support_rooms').update({ last_message: new Date().toISOString() }).eq('id', roomId)
-      setTimeout(() => setIsSending(false), 5000)
+      setTimeout(() => setIsSending(false), 2000)
     } else {
       console.error('Support Chat Error:', error)
       setInput(msgContent)
       setIsSending(false)
+    }
+  }
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        handleSend(reader.result as string)
+      }
+      reader.readAsDataURL(file)
     }
   }
 
@@ -169,12 +183,15 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
              <div style={{
                 padding: '10px 14px',
                 background: m.is_admin ? '#D4A53A' : '#F0E6D0',
-                color: m.is_admin ? '#1C1A17' : '#1C1A17',
+                color: '#1C1A17',
                 border: '2px solid #1C1A17',
                 boxShadow: m.is_admin ? '-4px 4px 0 0 #1C1A17' : '-4px 4px 0 0 #B5462E',
                 fontSize: 13, fontWeight: 600, fontFamily: 'Vazirmatn',
                 lineHeight: 1.5
              }}>
+                {(m as any).image && (
+                  <img src={(m as any).image} alt="attachment" style={{ maxWidth: '100%', borderRadius: 4, marginBottom: 8, display: 'block', border: '1px solid #1C1A17' }} />
+                )}
                 {m.content}
              </div>
              {m.is_admin && (
@@ -187,12 +204,29 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
       </div>
 
       {/* Input */}
-      <div style={{ padding: 16, borderTop: '3px solid #1C1A17', background: '#EDE0C5', display: 'flex', gap: 10 }}>
+      <div style={{ padding: 16, borderTop: '3px solid #1C1A17', background: '#EDE0C5', display: 'flex', gap: 8 }}>
+        <input
+          type="file"
+          id="support-img"
+          hidden
+          accept="image/*"
+          onChange={handleImageUpload}
+        />
+        <label
+          htmlFor="support-img"
+          style={{
+            width: 44, height: 44, background: '#FFFFFF', border: '2.5px solid #1C1A17',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            boxShadow: '-3px 3px 0 0 #1C1A17'
+          }}
+        >
+          <ImageIcon size={20} color="#6B7341" />
+        </label>
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSend()}
-          maxLength={200}
+          maxLength={500}
           placeholder="لێرە بنووسە..."
           style={{
             flex: 1, padding: '10px 14px', background: '#F0E6D0',
@@ -201,9 +235,8 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
           }}
         />
         <button
-          onClick={handleSend}
+          onClick={() => handleSend()}
           disabled={isSending}
-          title={isSending ? "تکایە ٥ چرکە چاوەڕێ بکە" : "ناردن"}
           style={{
             width: 44, height: 44, background: '#B5462E', color: '#F0E6D0',
             border: '2.5px solid #1C1A17', boxShadow: '-3px 3px 0 0 #1C1A17',

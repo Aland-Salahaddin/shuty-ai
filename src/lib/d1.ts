@@ -13,7 +13,7 @@ interface D1Result<T = Record<string, unknown>> {
   errors: { message: string }[]
 }
 
-async function d1Query<T = Record<string, unknown>>(
+export async function d1Query<T = Record<string, unknown>>(
   sql: string,
   params: (string | number | null)[] = []
 ): Promise<D1Result<T>> {
@@ -48,11 +48,21 @@ export async function initD1Schema(): Promise<void> {
   `)
   await d1Query(`
     CREATE TABLE IF NOT EXISTS messages (
-      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
       session_id TEXT NOT NULL,
-      role TEXT NOT NULL CHECK(role IN ('user','assistant')),
+      role TEXT NOT NULL,
       content TEXT NOT NULL,
+      image TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `)
+  await d1Query(`
+    CREATE TABLE IF NOT EXISTS profiles (
+      clerk_id TEXT PRIMARY KEY,
+      email TEXT,
+      plan TEXT DEFAULT 'FREE',
+      points INTEGER DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `)
@@ -64,6 +74,7 @@ export interface Message {
   session_id: string
   role: 'user' | 'assistant'
   content: string
+  image?: string
   created_at: string
 }
 
@@ -75,12 +86,12 @@ export async function saveMessage(msg: Omit<Message, 'id' | 'created_at'>): Prom
   // Ensure session exists
   await d1Query(
     `INSERT OR IGNORE INTO sessions (id, user_id, title) VALUES (?, ?, ?)`,
-    [msg.session_id, msg.user_id, msg.content.substring(0, 30)]
+    [msg.session_id, msg.user_id, msg.content.substring(0, 30) || "وێنە"]
   )
 
   await d1Query(
-    `INSERT INTO messages (id, user_id, session_id, role, content) VALUES (?, ?, ?, ?, ?)`,
-    [id, msg.user_id, msg.session_id, msg.role, msg.content]
+    `INSERT INTO messages (id, user_id, session_id, role, content, image) VALUES (?, ?, ?, ?, ?, ?)`,
+    [id, msg.user_id, msg.session_id, msg.role, msg.content, msg.image || null]
   )
 }
 

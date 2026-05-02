@@ -160,29 +160,50 @@ export default function AdminDashboard() {
                       )}
                     </div>
                   </td>
-                  <td style={{ padding: 15 }}>
-                    <div style={{ display: 'flex', gap: 10 }}>
+                   <td style={{ padding: 15 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                       <button 
                         onClick={() => handleUpdate(u.id, 'BAN', !u.publicMetadata?.is_banned)}
                         style={{ 
                           background: u.publicMetadata?.is_banned ? '#6B7341' : '#B5462E', 
-                          color: '#F0E6D0', border: '2px solid #1C1A17', padding: '5px 12px', 
-                          fontWeight: 900, cursor: 'pointer', fontSize: 12
+                          color: '#F0E6D0', border: '3px solid #1C1A17', padding: '8px 16px', 
+                          fontWeight: 900, cursor: 'pointer', fontSize: 13,
+                          boxShadow: '-3px 3px 0 0 #1C1A17'
                         }}
                       >
-                        {u.publicMetadata?.is_banned ? 'Unlock' : 'Ban'}
+                        {u.publicMetadata?.is_banned ? 'UNLOCK' : 'BAN'}
                       </button>
-                      
-                      <select 
-                        onChange={(e) => handleUpdate(u.id, 'TIMEOUT', e.target.value)}
-                        style={{ padding: '5px', border: '2px solid #1C1A17', fontWeight: 800, fontSize: 12 }}
-                      >
-                        <option value="">Timeout...</option>
-                        <option value="1H">1 Hour</option>
-                        <option value="24H">24 Hours</option>
-                        <option value="1W">1 Week</option>
-                        <option value="NONE">Clear</option>
-                      </select>
+
+                      <div style={{ display: 'flex', gap: 5 }}>
+                        {['1H', '24H', '1W', 'NONE'].map((t) => (
+                          <button
+                            key={t}
+                            onClick={() => handleUpdate(u.id, 'TIMEOUT', t)}
+                            style={{
+                              background: '#1C1A17', color: '#F0E6D0', border: '2px solid #1C1A17',
+                              padding: '5px 10px', fontSize: 10, fontWeight: 900, cursor: 'pointer'
+                            }}
+                          >
+                            {t === 'NONE' ? 'CLR' : t}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 5 }}>
+                        {['FREE', 'PRO', 'ULTRA'].map((p) => (
+                          <button
+                            key={p}
+                            onClick={() => handleUpdate(u.id, 'SET_PLAN', p)}
+                            style={{
+                              background: u.publicMetadata?.plan === p ? '#D4A53A' : '#FFFFFF',
+                              color: '#1C1A17', border: '2px solid #1C1A17',
+                              padding: '5px 10px', fontSize: 10, fontWeight: 900, cursor: 'pointer'
+                            }}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </td>
                 </tr>

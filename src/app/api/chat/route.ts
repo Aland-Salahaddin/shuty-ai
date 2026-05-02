@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
-import { getOrCreateProfile, incrementMessageCount, isLimitReached } from '@/lib/user-service';
+import { auth, currentUser, clerkClient } from '@clerk/nextjs/server';
+import { getOrCreateProfile, incrementMessageCount, isLimitReached, updateProfilePoints } from '@/lib/user-service';
 import { SHUTY_CONFIG } from '@/lib/shuty-config';
+import { saveMessage, initD1Schema } from '@/lib/d1';
 
 export const runtime = 'edge';
 
@@ -65,26 +66,51 @@ export async function POST(req: Request) {
     if (!userId) {
       return NextResponse.json({ error: "تکایە سەرەتا بچۆ ژوورەوە." }, { status: 401 });
     }
+    
+    const body = await req.json();
+    const { messages, sessionId } = body;
 
-    const user = await currentUser();
-    const profile = await getOrCreateProfile(userId, user?.emailAddresses[0]?.emailAddress);
+    if (!messages || !Array.isArray(messages)) {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
 
+    // Initialize D1
+    try {
+      await initD1Schema();
+    } catch (dbError: any) {
+      console.error("D1_INIT_ERROR:", dbError);
+      return NextResponse.json({ 
+        error: "DB_INIT_FAILED", 
+        message: "کێشە لە چالاککردنی بنکەی زانیاریدا هەیە. تکایە دڵنیا بەرەوە کلیلەکانی Cloudflare دروستن." 
+      }, { status: 500 });
+    }
+
+    const clerk = await clerkClient();
+    const userData = await clerk.users.getUser(userId);
+    const metadata = userData.publicMetadata as any;
+
+    // 1. Plan Expiry Check (30 days)
+    let currentPlan = (metadata?.plan || 'FREE').toUpperCase();
+    const expiryDate = metadata?.plan_expiry;
+
+    if (currentPlan !== 'FREE' && expiryDate && new Date(expiryDate) < new Date()) {
+      // Plan expired, reset to FREE
+      await clerk.users.updateUser(userId, {
+        publicMetadata: {
+          ...metadata,
+          plan: 'FREE',
+          plan_expiry: null
+        }
+      });
+      currentPlan = 'FREE';
+    }
+
+    const profile = await getOrCreateProfile(userId, userData.emailAddresses[0]?.emailAddress);
     if (!profile) {
       return NextResponse.json({ error: "کێشە لە بنکەی زانیاریدا هەیە." }, { status: 500 });
     }
 
-    // Check Limit
-    if (isLimitReached(profile)) {
-      return NextResponse.json({ 
-        error: "LIMIT_REACHED", 
-        message: `تۆ سنووری پەیامەکانی ئەمڕۆت تەواو کردووە (${SHUTY_CONFIG[profile.plan.toUpperCase() as 'FREE' | 'PRO'].maxMessagesPerDay} پەیام). بۆ بەردەوامبوون هەژمارەکەت بکە بە Pro.` 
-      }, { status: 403 });
-    }
-
-    // 2. Metadata check (Ban/Timeout/Plan)
-    const clerk = await clerkClient();
-    const userData = await clerk.users.getUser(userId);
-    const metadata = userData.publicMetadata as any;
+    const planConfig = (SHUTY_CONFIG as any)[currentPlan] || SHUTY_CONFIG.FREE;
 
     // Check if Banned
     if (metadata?.is_banned) {
@@ -99,8 +125,10 @@ export async function POST(req: Request) {
     // 3. Token usage check
     const today = new Date().toISOString().split('T')[0]
     let tokensUsedToday = metadata?.usage?.date === today ? (metadata?.usage?.tokens || 0) : 0
-    const planConfig = (SHUTY_CONFIG as any)[currentPlan]
+    let imagesUsedToday = metadata?.usage?.date === today ? (metadata?.usage?.images || 0) : 0
+    
     const maxTokens = planConfig.maxTokensPerDay
+    const maxImages = planConfig.maxImagesPerDay
 
     if (tokensUsedToday >= maxTokens) {
       return new NextResponse(JSON.stringify({
@@ -109,45 +137,65 @@ export async function POST(req: Request) {
       }), { status: 403 })
     }
 
-    const { messages } = await req.json()
-    // ... logic for API keys and generation ...
+    // Check for images in the new message
+    const lastMsg = messages[messages.length - 1]
+    if (lastMsg.role === 'user' && lastMsg.image) {
+      if (imagesUsedToday >= maxImages) {
+        return new NextResponse(JSON.stringify({
+          error: 'LIMIT_REACHED',
+          message: `تۆ سنووری وێنەکانی ئەمڕۆت تەواو کردووە (${maxImages} وێنە). بۆ بەردەوامبوون هەژمارەکەت بەرز بکەرەوە.`
+        }), { status: 403 })
+      }
+      imagesUsedToday += 1
+    }
 
-    // After getting the response from OpenRouter
-    // Note: OpenRouter returns usage in the response. I'll need to parse it.
-    
-    // For now, I'll simulate or calculate tokens if not provided by stream
-    // Actually, I'll update the metadata AFTER the stream completes or using a estimated cost
-    // Let's assume the response contains usage or we estimate it.
-    
-    // I'll update the metadata with the new usage
-    // Since we are using Response stream, it's better to update it after the stream.
-    // Or just increment by a fixed amount per message for now if stream usage is hard to track.
-    
-    // Better: OpenRouter non-streaming returns usage. Streaming might not.
-    // I will increment by an estimate (prompt + expected max response) or update on next request.
-    
-    // Let's update metadata with a reasonable estimate per interaction (e.g. 1000 tokens) 
-    // OR we can fetch usage from OpenRouter stats.
-    
-    // UPDATE: I will update metadata with a placeholder increment and you can refine it.
+    // Save user message to history if sessionId exists
+    if (sessionId) {
+      await saveMessage({
+        user_id: userId,
+        session_id: sessionId,
+        role: 'user',
+        content: lastMsg.content || "",
+        image: lastMsg.image
+      }).catch(console.error);
+    }
+
+    // Format messages for multimodal support
+    const formattedMessages = messages.map((m: any) => {
+      if (m.image && m.role === 'user') {
+        return {
+          role: m.role,
+          content: [
+            { type: 'text', text: m.content || "ئەم وێنەیە شی بکەرەوە" },
+            { type: 'image_url', image_url: { url: m.image } }
+          ]
+        }
+      }
+      return { role: m.role, content: m.content }
+    })
+
+    // Update metadata with usage
     await clerk.users.updateUser(userId, {
       publicMetadata: {
         ...metadata,
         usage: {
           date: today,
-          tokens: tokensUsedToday + 1000 // Approximate for now, real usage can be more precise
+          tokens: tokensUsedToday + 1000,
+          images: imagesUsedToday
         }
       }
     })
+
     const key = OPENROUTER_KEYS[Math.floor(Math.random() * OPENROUTER_KEYS.length)];
     const serperKey = SERPER_KEYS[Math.floor(Math.random() * SERPER_KEYS.length)];
 
-    const plan = profile.plan.toUpperCase() as 'FREE' | 'PRO';
-    const config = SHUTY_CONFIG[plan];
-    const userModel = config.model;
+    const userModel = planConfig.model;
+    const finalPrompt = SYSTEM_PROMPT
+      .replace('{VERSION_NAME}', planConfig.displayName)
+      .replace('{PLAN_TYPE}', currentPlan);
 
     let searchContext = "";
-    if (config.hasSearch && serperKey) {
+    if (planConfig.hasSearch && serperKey) {
       const searchQuery = await getSearchQuery(messages, key, userModel);
       const searchRes = await fetch("https://google.serper.dev/search", {
         method: "POST",
@@ -171,27 +219,49 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: userModel,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT + (searchContext ? `\n\n[CONTEXT]:\n${searchContext}` : "") },
-          ...messages
+          { role: 'system', content: finalPrompt + (searchContext ? `\n\n[CONTEXT]:\n${searchContext}` : "") },
+          ...formattedMessages
         ],
         temperature: 0.3,
         stream: false
       })
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      const responseText = data.choices?.[0]?.message?.content;
-      if (responseText) {
-        await incrementMessageCount(userId);
-        return NextResponse.json({ text: responseText });
-      }
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("OpenRouter API Error:", response.status, errorData);
+      return NextResponse.json({ 
+        error: `OpenRouter Error (${response.status})`,
+        message: errorData.error?.message || "کێشەیەک لە پەیوەندی بە زیرەکی دەستکرد دروست بوو." 
+      }, { status: response.status });
     }
 
-    return NextResponse.json({ error: "ببوورە، کێشەیەک لە پەیوەندی دروست بوو." }, { status: 500 });
+    const data = await response.json();
+    const responseText = data.choices?.[0]?.message?.content;
+    
+    if (responseText) {
+      await incrementMessageCount(userId);
+      
+      // Save assistant message to history
+      if (sessionId) {
+        await saveMessage({
+          user_id: userId,
+          session_id: sessionId,
+          role: 'assistant',
+          content: responseText
+        }).catch(err => console.error("History Save Error:", err));
+      }
 
-  } catch (error) {
-    console.error("Chat API Error:", error);
-    return NextResponse.json({ error: "هەڵەیەک ڕوویدا." }, { status: 500 });
+      return NextResponse.json({ text: responseText });
+    }
+
+    return NextResponse.json({ error: "Empty response from AI" }, { status: 500 });
+
+  } catch (error: any) {
+    console.error("CRITICAL_CHAT_ERROR:", error);
+    return NextResponse.json({ 
+      error: "INTERNAL_ERROR",
+      message: error.message || "هەڵەیەک لە سێرڤەر ڕوویدا." 
+    }, { status: 500 });
   }
 }

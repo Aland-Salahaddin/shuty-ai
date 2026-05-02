@@ -1,79 +1,63 @@
-import { supabaseAdmin } from '@/lib/supabase';
+import { d1Query } from './d1';
 import { SHUTY_CONFIG } from './shuty-config';
 
 export async function getOrCreateProfile(clerkId: string, email?: string) {
-  if (!supabaseAdmin) {
-    console.error('Supabase Admin client not initialized. Check your environment variables.');
+  try {
+    // 1. Try to get existing profile
+    const result = await d1Query(
+      `SELECT * FROM profiles WHERE clerk_id = ? LIMIT 1`,
+      [clerkId]
+    );
+
+    const profile = result.results?.[0] as any;
+
+    if (profile) {
+      return profile;
+    }
+
+    // 2. Create new profile if not exists
+    await d1Query(
+      `INSERT INTO profiles (clerk_id, email, plan, points) VALUES (?, ?, ?, ?)`,
+      [clerkId, email || '', 'FREE', 0]
+    );
+
+    const newResult = await d1Query(
+      `SELECT * FROM profiles WHERE clerk_id = ? LIMIT 1`,
+      [clerkId]
+    );
+
+    return newResult.results?.[0];
+  } catch (error) {
+    console.error('getOrCreateProfile Error:', error);
     return null;
   }
-  // 1. Try to get existing profile
-  const { data: profile, error } = await supabaseAdmin
-    .from('profiles')
-    .select('*')
-    .eq('clerk_id', clerkId)
-    .single();
-
-  if (profile) {
-    // Check if we need to reset the daily count
-    const lastDate = new Date(profile.last_message_date).toDateString();
-    const today = new Date().toDateString();
-
-    if (lastDate !== today) {
-      // Reset for a new day
-      const { data: updated } = await supabaseAdmin
-        .from('profiles')
-        .update({ messages_sent: 0, last_message_date: new Date().toISOString() })
-        .eq('clerk_id', clerkId)
-        .select()
-        .single();
-      return updated;
-    }
-    return profile;
-  }
-
-  // 2. Create new profile if not exists
-  if (error || !profile) {
-    const { data: newProfile, error: createError } = await supabaseAdmin
-      .from('profiles')
-      .insert({
-        clerk_id: clerkId,
-        email: email || '',
-        plan: 'free',
-        messages_sent: 0,
-        last_message_date: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (createError) {
-      console.error('Error creating profile:', createError);
-      return null;
-    }
-    return newProfile;
-  }
-
-  return null;
 }
 
 export async function incrementMessageCount(clerkId: string) {
-  if (!supabaseAdmin) return;
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('messages_sent')
-    .eq('clerk_id', clerkId)
-    .single();
+  // We handle message count via Clerk metadata now for speed, 
+  // but we can also log it in D1 for analytics.
+  try {
+    await d1Query(
+      `UPDATE profiles SET points = points + 1 WHERE clerk_id = ?`,
+      [clerkId]
+    );
+  } catch (error) {
+    console.error('incrementMessageCount Error:', error);
+  }
+}
 
-  if (profile) {
-    await supabaseAdmin
-      .from('profiles')
-      .update({ messages_sent: profile.messages_sent + 1 })
-      .eq('clerk_id', clerkId);
+export async function updateProfilePoints(clerkId: string, points: number) {
+  try {
+    await d1Query(
+      `UPDATE profiles SET points = ? WHERE clerk_id = ?`,
+      [points, clerkId]
+    );
+  } catch (error) {
+    console.error('updateProfilePoints Error:', error);
   }
 }
 
 export function isLimitReached(profile: any) {
-  if (!profile) return true;
-  const plan = profile.plan.toUpperCase() as 'FREE' | 'PRO';
-  const config = SHUTY_CONFIG[plan];
-  return profile.messages_sent >= config.maxMessagesPerDay;
+  // This is handled in the route now using Clerk metadata for real-time accuracy
+  return false;
 }
