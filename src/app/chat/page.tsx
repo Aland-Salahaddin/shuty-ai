@@ -254,9 +254,10 @@ function ChatContent() {
     const contentToSend = retryContent !== undefined ? retryContent : input
     const imageToSend = retryImage !== undefined ? retryImage : selectedImage
 
-    if ((!contentToSend.trim() && !imageToSend) || loading || isTimedOut) return
+    const safeInput = String(contentToSend || '')
+    if ((!safeInput.trim() && !imageToSend) || loading || isTimedOut) return
     
-    const userMsg: Message = { role: 'user', content: contentToSend, image: imageToSend || undefined }
+    const userMsg: Message = { role: 'user', content: safeInput, image: imageToSend || undefined }
     
     if (retryContent === undefined) {
       setMessages(prev => [...prev, userMsg])
@@ -650,7 +651,7 @@ function ChatContent() {
                       src={m.image} 
                       alt="attachment" 
                       style={{ 
-                        maxWidth: '100%', display: 'block', borderRadius: 6, marginBottom: 10, 
+                        maxWidth: 300, display: 'block', borderRadius: 6, marginBottom: 10, 
                         border: '2px solid #1C1A17', boxShadow: '-3px 3px 0 0 #1C1A17'
                       }} 
                     />

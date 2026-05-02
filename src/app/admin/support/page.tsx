@@ -18,6 +18,7 @@ interface Room {
 interface Message {
   id: string
   content: string
+  image?: string
   is_admin: boolean
   created_at: string
 }
@@ -29,6 +30,8 @@ export default function AdminSupportPage() {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // 1. Security Check
@@ -96,13 +99,16 @@ export default function AdminSupportPage() {
 
   // 4. Send Message
   const handleSend = async () => {
-    if (!supabase || !input.trim() || !selectedRoom || !user) return
+    if (!supabase || (!input.trim() && !selectedImage) || !selectedRoom || !user) return
     const msgContent = input.trim()
+    const imageToSend = selectedImage
     setInput('')
+    setSelectedImage(null)
 
     const { error } = await supabase.from('support_messages').insert({
       room_id: selectedRoom.id,
       content: msgContent,
+      image: imageToSend,
       is_admin: true
     })
 
@@ -110,6 +116,17 @@ export default function AdminSupportPage() {
       await supabase.from('support_rooms').update({ last_message: new Date().toISOString() }).eq('id', selectedRoom.id)
     } else {
       console.error('Admin Send Error:', error)
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string)
+      }
+      reader.readAsDataURL(file)
     }
   }
   
@@ -224,6 +241,11 @@ export default function AdminSupportPage() {
                     boxShadow: m.is_admin ? '-6px 6px 0 0 #1C1A17' : '-6px 6px 0 0 #D4A53A',
                     fontSize: 14, fontWeight: 700, lineHeight: 1.6
                   }}>
+                    {m.image && (
+                      <div style={{ marginBottom: 10, borderRadius: 12, overflow: 'hidden', border: '2px solid #1C1A17', maxWidth: 300 }}>
+                        <img src={m.image} alt="uploaded" style={{ width: '100%', height: 'auto', display: 'block' }} />
+                      </div>
+                    )}
                     {m.content}
                   </div>
                   <div style={{ fontSize: 9, color: '#6B7341', fontWeight: 800, alignSelf: m.is_admin ? 'flex-end' : 'flex-start' }}>
@@ -236,29 +258,60 @@ export default function AdminSupportPage() {
             {/* Input Area */}
             <div style={{ padding: 24, borderTop: '3px solid #1C1A17', background: '#EDE0C5', display: 'flex', gap: 16 }}>
               <input
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSend()}
-                placeholder="Reply to user..."
-                style={{
-                  flex: 1, padding: '16px 24px', background: '#F0E6D0',
-                  border: '3.5px solid #1C1A17', outline: 'none',
-                  fontFamily: 'Vazirmatn', fontWeight: 800, fontSize: 15,
-                  boxShadow: 'inset 4px 4px 0 0 rgba(0,0,0,0.05)'
-                }}
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                style={{ display: 'none' }}
               />
-              <button
-                onClick={handleSend}
-                style={{
-                  padding: '0 32px', background: '#B5462E', color: '#F0E6D0',
-                  border: '3.5px solid #1C1A17', boxShadow: '-6px 6px 0 0 #1C1A17',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', fontWeight: 900
-                }}
-                className="press-effect"
-              >
-                <Send size={20} />
-              </button>
+
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {selectedImage && (
+                  <div style={{ position: 'relative', width: 80, height: 80, border: '3px solid #1C1A17', boxShadow: '-3px 3px 0 #1C1A17' }}>
+                    <img src={selectedImage} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button 
+                      onClick={() => setSelectedImage(null)}
+                      style={{ position: 'absolute', top: -10, right: -10, background: '#B5462E', color: 'white', border: '2px solid #1C1A17', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}
+                    >X</button>
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <input
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSend()}
+                    placeholder="Reply to user..."
+                    style={{
+                      flex: 1, padding: '16px 24px', background: '#F0E6D0',
+                      border: '3.5px solid #1C1A17', outline: 'none',
+                      fontFamily: 'Vazirmatn', fontWeight: 800, fontSize: 15,
+                      boxShadow: 'inset 4px 4px 0 0 rgba(0,0,0,0.05)'
+                    }}
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      padding: '0 20px', background: '#D4A53A', color: '#1C1A17',
+                      border: '3.5px solid #1C1A17', boxShadow: '-4px 4px 0 0 #1C1A17',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}
+                  >
+                    📷
+                  </button>
+                  <button
+                    onClick={handleSend}
+                    style={{
+                      padding: '0 32px', background: '#B5462E', color: '#F0E6D0',
+                      border: '3.5px solid #1C1A17', boxShadow: '-6px 6px 0 0 #1C1A17',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', fontWeight: 900
+                    }}
+                    className="press-effect"
+                  >
+                    <Send size={20} />
+                  </button>
+                </div>
+              </div>
             </div>
           </>
         ) : (

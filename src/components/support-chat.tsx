@@ -190,7 +190,9 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
                 lineHeight: 1.5
              }}>
                 {(m as any).image && (
-                  <img src={(m as any).image} alt="attachment" style={{ maxWidth: '100%', borderRadius: 4, marginBottom: 8, display: 'block', border: '1px solid #1C1A17' }} />
+                  <div style={{ marginBottom: 8, borderRadius: 8, overflow: 'hidden', border: '2px solid #1C1A17', maxWidth: 300 }}>
+                    <img src={(m as any).image} alt="attachment" style={{ width: '100%', height: 'auto', display: 'block' }} />
+                  </div>
                 )}
                 {m.content}
              </div>
