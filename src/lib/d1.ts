@@ -30,6 +30,9 @@ export async function d1Query<T = Record<string, unknown>>(
     }
   )
   const json = await res.json()
+  if (!res.ok) {
+    throw new Error(`D1 API Error (${res.status}): ${JSON.stringify(json.errors || json)}`)
+  }
   if (Array.isArray(json.result)) {
     return json.result[0] as D1Result<T>
   }

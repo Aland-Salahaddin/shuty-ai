@@ -27,9 +27,9 @@ export async function getOrCreateProfile(clerkId: string, email?: string) {
     );
 
     return newResult.results?.[0];
-  } catch (error) {
+  } catch (error: any) {
     console.error('getOrCreateProfile Error:', error);
-    return null;
+    throw error;
   }
 }
 

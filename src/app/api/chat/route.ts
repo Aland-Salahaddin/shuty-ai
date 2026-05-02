@@ -107,7 +107,10 @@ export async function POST(req: Request) {
 
     const profile = await getOrCreateProfile(userId, userData.emailAddresses[0]?.emailAddress);
     if (!profile) {
-      return NextResponse.json({ error: "کێشە لە بنکەی زانیاریدا هەیە." }, { status: 500 });
+      return NextResponse.json({ 
+        error: "PROFILE_NOT_FOUND", 
+        message: "هەژمارەکەت لە بنکەی زانیاریدا نەدۆزرایەوە." 
+      }, { status: 500 });
     }
 
     const planConfig = (SHUTY_CONFIG as any)[currentPlan] || SHUTY_CONFIG.FREE;
