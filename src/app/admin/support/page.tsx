@@ -65,23 +65,23 @@ export default function AdminSupportPage() {
 
   // 3. Fetch Messages for Selected Room
   useEffect(() => {
-    if (selectedRoom) {
-      fetchMessages(selectedRoom.id)
+    if (!supabase || !selectedRoom) return
 
-      const channel = supabase
-        .channel(`admin-room-${selectedRoom.id}`)
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'support_messages',
-          filter: `room_id=eq.${selectedRoom.id}`
-        }, (payload) => {
-          setMessages(prev => [...prev, payload.new as Message])
-        })
-        .subscribe()
+    fetchMessages(selectedRoom.id)
 
-      return () => { supabase.removeChannel(channel) }
-    }
+    const channel = supabase
+      .channel(`admin-room-${selectedRoom.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'support_messages',
+        filter: `room_id=eq.${selectedRoom.id}`
+      }, (payload) => {
+        setMessages(prev => [...prev, payload.new as Message])
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [selectedRoom])
 
   const fetchMessages = async (rid: string) => {

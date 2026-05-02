@@ -373,25 +373,27 @@ export default function ChatPage() {
               {user?.imageUrl ? <img src={user.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#1C1A17', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user?.fullName || 'بەکارهێنەر'}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ fontSize: 10, color: '#6B7341', fontWeight: 600 }}>بەکارهێنەری {isPro ? 'Pro' : 'خۆڕایی'}</div>
-                {user?.primaryEmailAddress?.emailAddress === 'alandkurd485@gmail.com' && (
-                  <a href="/admin/support" style={{ 
-                    fontSize: 10, color: '#B5462E', fontWeight: 900, textDecoration: 'none',
-                    background: '#F0E6D0', padding: '1px 4px', border: '1px solid #1C1A17',
-                    boxShadow: '-1px 1px 0 #1C1A17'
-                  }}>
-                    ADMIN
-                  </a>
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <UserButton afterSignOutUrl="/" />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: '#1C1A17', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {user?.fullName || 'بەکارهێنەر'}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ fontSize: 10, color: '#6B7341', fontWeight: 600 }}>بەکارهێنەری {isPro ? 'Pro' : 'خۆڕایی'}</div>
+                    {user?.primaryEmailAddress?.emailAddress === 'alandkurd485@gmail.com' && (
+                      <a href="/admin/support" style={{ 
+                        fontSize: 10, color: '#B5462E', fontWeight: 900, textDecoration: 'none',
+                        background: '#F0E6D0', padding: '1px 4px', border: '1px solid #1C1A17',
+                        boxShadow: '-1px 1px 0 #1C1A17'
+                      }}>
+                        ADMIN
+                      </a>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-            <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#1C1A17', cursor: 'pointer', padding: 4 }} title="Logout">
-              <LogOut size={16} />
-            </button>
           </div>
         </div>
       </div>
