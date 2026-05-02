@@ -37,7 +37,7 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
 
         if (existing) {
           setRoomId(existing.id)
-          fetchMessages(existing.id)
+          // Not fetching messages to keep history hidden for user
         } else {
           // Create new room
           const { data: created } = await supabase
