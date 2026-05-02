@@ -87,7 +87,7 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
 
   // 4. Send Message
   const handleSend = async () => {
-    if (!supabase || !input.trim() || !roomId || !user) return
+    if (!supabase || !input.trim() || !roomId || !user || isSending) return
 
     const { data: messages } = await supabase.from('support_messages').select('id').eq('room_id', roomId)
     const msgCount = messages?.length || 0
@@ -101,20 +101,21 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
 
     const msgContent = input.trim().substring(0, 200)
     setInput('')
+    setIsSending(true)
 
     const { error } = await supabase.from('support_messages').insert({
       room_id: roomId,
-      sender_id: user.id,
       content: msgContent,
-      is_admin: user.primaryEmailAddress?.emailAddress === 'alandkurd485@gmail.com'
+      is_admin: false
     })
 
-    if (error) {
-      console.error('Support Chat Error:', error)
-      setInput(msgContent) // restore on error
+    if (!error) {
+      await supabase.from('support_rooms').update({ last_message: new Date().toISOString() }).eq('id', roomId)
+      setTimeout(() => setIsSending(false), 5000)
     } else {
-        // Update last_message timestamp
-        await supabase.from('support_rooms').update({ last_message: new Date().toISOString() }).eq('id', roomId)
+      console.error('Support Chat Error:', error)
+      setInput(msgContent)
+      setIsSending(false)
     }
   }
 
@@ -152,7 +153,7 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
             background: '#EDE0C5', border: '2px dashed #6B7341', padding: 12,
             fontSize: 11, color: '#6B7341', textAlign: 'center', fontWeight: 700, marginBottom: 8
         }}>
-            پەیامێک بنووسە بۆ پەیوەندی کردن بە Admin سەبارەت بە کڕینی پلانی Pro.
+            پەیامێک بنووسە بۆ پەیوەندی کردن بە ئەدمین سەبارەت بە کڕینی پلانی پڕۆ.
         </div>
 
         {messages.map((m) => (
@@ -174,7 +175,7 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
              </div>
              {m.is_admin && (
                 <div style={{ fontSize: 9, color: '#B5462E', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 4 }}>
-                   <ShieldCheck size={10} /> ADMIN
+                   <ShieldCheck size={10} /> ئەدمین
                 </div>
              )}
           </div>
