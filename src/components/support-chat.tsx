@@ -104,16 +104,6 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
     }
 
     const msgContent = input.trim().substring(0, 200)
-    
-    // Add to local state immediately
-    const tempId = Math.random().toString()
-    setMessages(prev => [...prev, {
-      id: tempId,
-      content: msgContent,
-      is_admin: false,
-      created_at: new Date().toISOString()
-    }])
-
     setInput('')
     setIsSending(true)
 

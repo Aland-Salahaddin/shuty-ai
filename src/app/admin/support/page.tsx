@@ -98,16 +98,6 @@ export default function AdminSupportPage() {
   const handleSend = async () => {
     if (!supabase || !input.trim() || !selectedRoom || !user) return
     const msgContent = input.trim()
-    
-    // Optimistic Update
-    const tempId = Math.random().toString()
-    setMessages(prev => [...prev, {
-      id: tempId,
-      content: msgContent,
-      is_admin: true,
-      created_at: new Date().toISOString()
-    }])
-
     setInput('')
 
     const { error } = await supabase.from('support_messages').insert({
