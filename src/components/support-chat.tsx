@@ -198,11 +198,14 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
         />
         <button
           onClick={handleSend}
+          disabled={isSending}
+          title={isSending ? "تکایە ٥ چرکە چاوەڕێ بکە" : "ناردن"}
           style={{
             width: 44, height: 44, background: '#B5462E', color: '#F0E6D0',
             border: '2.5px solid #1C1A17', boxShadow: '-3px 3px 0 0 #1C1A17',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer'
+            cursor: isSending ? 'not-allowed' : 'pointer',
+            opacity: isSending ? 0.6 : 1
           }}
           className="press-effect"
         >
