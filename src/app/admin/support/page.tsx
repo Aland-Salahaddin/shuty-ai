@@ -112,13 +112,14 @@ export default function AdminSupportPage() {
 
     const { error } = await supabase.from('support_messages').insert({
       room_id: selectedRoom.id,
-      sender_id: user.id,
       content: msgContent,
       is_admin: true
     })
 
     if (!error) {
       await supabase.from('support_rooms').update({ last_message: new Date().toISOString() }).eq('id', selectedRoom.id)
+    } else {
+      console.error('Admin Send Error:', error)
     }
   }
   
