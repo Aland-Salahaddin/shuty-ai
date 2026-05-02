@@ -1,66 +1,156 @@
 'use client'
 
-import React from 'react'
-import { PricingTable } from '@/components/pricing-table'
-import { SHUTY_CONFIG } from '@/lib/shuty-config'
+import { Rocket, ShieldCheck, Zap, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
-import { ArrowRight, Info } from 'lucide-react'
+import { SHUTY_CONFIG } from '@/lib/shuty-config'
+
+const toArabicDigits = (num: number | string) => {
+  return num.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)])
+}
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-[#F0E6D0] py-20 px-4 font-['Vazirmatn'] rtl">
-      {/* Header */}
-      <div className="max-w-4xl mx-auto text-center mb-16">
-        <h1 className="text-5xl md:text-7xl font-black text-black mb-6 uppercase tracking-tighter">
-          نرخەکان و پلانەکان
-        </h1>
-        <p className="text-xl font-bold text-[#B5462E] max-w-2xl mx-auto leading-relaxed">
-          هەموو هێز و زیرەکیی Shuty بخە خزمەت خۆت. پلانێک هەڵبژێرە کە لەگەڵ کارەکەتدا دەگونجێت.
-        </p>
+    <div dir="rtl" style={{ 
+      minHeight: '100vh', 
+      background: '#F0E6D0', 
+      fontFamily: 'Vazirmatn',
+      padding: '40px 20px',
+      color: '#1C1A17'
+    }}>
+      {/* HEADER */}
+      <div style={{ textAlign: 'center', marginBottom: 60 }}>
+        <h1 style={{ fontSize: 48, fontWeight: 900, marginBottom: 16, textShadow: '4px 4px 0 #D4A53A' }}>نرخەکان و پلانەکان</h1>
+        <p style={{ fontSize: 18, fontWeight: 600, color: '#6B7341' }}>پلانی گونجاو بۆ خۆت هەڵبژێرە و دەست بکە بە بەکارهێنانی شوتی</p>
       </div>
 
-      {/* Pricing Table Component */}
-      <PricingTable />
-
-      {/* Payment Info */}
-      <div className="max-w-4xl mx-auto mt-20 border-4 border-black bg-white p-8 shadow-[12px_12px_0px_0px_rgba(181,70,46,1)]">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 bg-[#B5462E] text-white border-2 border-black">
-            <Info size={24} />
+      <div style={{ 
+        maxWidth: 1200, 
+        margin: '0 auto', 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
+        gap: 30 
+      }}>
+        {/* FREE PLAN */}
+        <div style={{ 
+          background: '#FFFFFF', 
+          border: '4px solid #1C1A17', 
+          boxShadow: '-10px 10px 0 0 #1C1A17',
+          padding: 30,
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <div style={{ marginBottom: 20 }}>
+            <h2 style={{ fontSize: 28, fontWeight: 900 }}>Shuty 1.5</h2>
+            <div style={{ fontSize: 40, fontWeight: 900, marginTop: 10 }}>بەخۆڕایی</div>
           </div>
-          <h2 className="text-3xl font-black">{SHUTY_CONFIG.paymentInstructions.title}</h2>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 30px 0', flex: 1 }}>
+            <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 600 }}>
+              <ShieldCheck size={20} color="#6B7341" /> {toArabicDigits(SHUTY_CONFIG.FREE.maxMessagesPerDay)} نامەی ڕۆژانە
+            </li>
+            <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 600 }}>
+              <ShieldCheck size={20} color="#6B7341" /> {toArabicDigits(SHUTY_CONFIG.FREE.maxImagesPerDay)} شکاندنەوەی وێنە
+            </li>
+            <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 600 }}>
+              <ShieldCheck size={20} color="#6B7341" /> زیرەکی ئاستی سەرەتایی
+            </li>
+          </ul>
+          <Link href="/chat" style={{ 
+            background: '#1C1A17', color: '#F0E6D0', textAlign: 'center', padding: '14px', 
+            textDecoration: 'none', fontWeight: 900, border: '2px solid #1C1A17'
+          }}>دەستپێکردن</Link>
         </div>
-        
-        <p className="text-lg font-bold mb-8 leading-relaxed">
-          {SHUTY_CONFIG.paymentInstructions.message}
-        </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {SHUTY_CONFIG.paymentInstructions.methods.map((method, idx) => (
-            <div key={idx} className="border-2 border-black p-4 bg-[#F0E6D0]">
-              <div className="font-black text-sm uppercase mb-1">{method.name}</div>
-              <div className="font-black text-xl">{method.detail}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-10 pt-8 border-t-2 border-dashed border-black flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <div className="text-sm font-bold uppercase opacity-60">پێویستت بە هاوکارییە؟</div>
-            <div className="text-xl font-black">پەیوەندیمان پێوە بکە لە {SHUTY_CONFIG.paymentInstructions.supportContact}</div>
+        {/* PRO PLAN */}
+        <div style={{ 
+          background: '#D4A53A', 
+          border: '4px solid #1C1A17', 
+          boxShadow: '-10px 10px 0 0 #1C1A17',
+          padding: 30,
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+          transform: 'scale(1.05)',
+          zIndex: 1
+        }}>
+          <div style={{ 
+            position: 'absolute', top: -15, left: '50%', transform: 'translateX(-50%)',
+            background: '#1C1A17', color: '#D4A53A', padding: '4px 12px', fontWeight: 900, fontSize: 12, border: '2px solid #1C1A17'
+          }}>بەناوبانگترین</div>
+          <div style={{ marginBottom: 20 }}>
+            <h2 style={{ fontSize: 28, fontWeight: 900 }}>Shuty 2.5</h2>
+            <div style={{ fontSize: 40, fontWeight: 900, marginTop: 10 }}>٧,٥٠٠ دینار <span style={{ fontSize: 16 }}>/ مانگانە</span></div>
           </div>
-          <Link 
-            href="/chat"
-            className="flex items-center gap-2 px-8 py-4 bg-black text-white font-black text-lg hover:bg-[#B5462E] transition-colors"
-          >
-            گەڕانەوە بۆ چات <ArrowRight size={20} className="rotate-180" />
-          </Link>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 30px 0', flex: 1 }}>
+            <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800 }}>
+              <Zap size={20} /> {toArabicDigits(SHUTY_CONFIG.PRO.maxMessagesPerDay)} نامەی ڕۆژانە
+            </li>
+            <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800 }}>
+              <Zap size={20} /> {toArabicDigits(SHUTY_CONFIG.PRO.maxImagesPerDay)} شکاندنەوەی وێنە
+            </li>
+            <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800 }}>
+              <Zap size={20} /> زیرەکی بەرزتر و خێراتر
+            </li>
+            <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800 }}>
+              <Zap size={20} /> یارمەتیدەری کەسی
+            </li>
+          </ul>
+          <Link href="/chat?openSupport=true" style={{ 
+            background: '#1C1A17', color: '#D4A53A', textAlign: 'center', padding: '14px', 
+            textDecoration: 'none', fontWeight: 900, border: '2px solid #1C1A17'
+          }}>کڕینی پلانەکە</Link>
+        </div>
+
+        {/* ULTRA PLAN */}
+        <div style={{ 
+          background: '#B5462E', 
+          border: '4px solid #1C1A17', 
+          boxShadow: '-10px 10px 0 0 #1C1A17',
+          padding: 30,
+          display: 'flex',
+          flexDirection: 'column',
+          color: '#F0E6D0'
+        }}>
+          <div style={{ marginBottom: 20 }}>
+            <h2 style={{ fontSize: 28, fontWeight: 900 }}>Shuty 3.0</h2>
+            <div style={{ fontSize: 40, fontWeight: 900, marginTop: 10 }}>١٥,٠٠٠ دینار <span style={{ fontSize: 16 }}>/ مانگانە</span></div>
+          </div>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 30px 0', flex: 1 }}>
+            <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800 }}>
+              <Rocket size={20} /> {toArabicDigits(SHUTY_CONFIG.ULTRA.maxMessagesPerDay)} نامەی ڕۆژانە
+            </li>
+            <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800 }}>
+              <Rocket size={20} /> {toArabicDigits(SHUTY_CONFIG.ULTRA.maxImagesPerDay)} شکاندنەوەی وێنە
+            </li>
+            <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800 }}>
+              <Rocket size={20} /> بەهێزترین ئاستی زیرەکی
+            </li>
+            <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800 }}>
+              <Rocket size={20} /> پشتگیری تایبەت و خێرا
+            </li>
+          </ul>
+          <Link href="/chat?openSupport=true" style={{ 
+            background: '#F0E6D0', color: '#B5462E', textAlign: 'center', padding: '14px', 
+            textDecoration: 'none', fontWeight: 900, border: '4px solid #1C1A17'
+          }}>کڕینی پلانەکە</Link>
         </div>
       </div>
 
-      {/* Footer Note */}
-      <div className="text-center mt-20 font-bold opacity-40">
-        Shuty AI © 2026 - هەموو مافەکان پارێزراوە
+      {/* FOOTER INFO */}
+      <div style={{ 
+        maxWidth: 800, margin: '60px auto 0 auto', background: '#FFFFFF', border: '3px solid #1C1A17', 
+        boxShadow: '-6px 6px 0 0 #1C1A17', padding: 30, textAlign: 'center' 
+      }}>
+        <h3 style={{ fontWeight: 900, fontSize: 24, marginBottom: 16 }}>چۆنیەتی کڕین؟</h3>
+        <p style={{ fontWeight: 600, lineHeight: 1.8 }}>
+          بۆ نوێکردنەوەی هەژمارەکەت، تکایە کلیک لەسەر "کڕینی پلانەکە" بکە و لە ڕێگەی چاتی ڕاستەوخۆوە پەیوەندیمان پێوە بکە. 
+          دەتوانیت لە ڕێگەی <span style={{ color: '#B5462E', fontWeight: 900 }}>ZainCash, FastPay, FIB</span> پارەکە بنێریت و هەژمارەکەت چالاک بکەیت.
+        </p>
+        <Link href="/chat" style={{ 
+          marginTop: 20, display: 'inline-flex', alignItems: 'center', gap: 10, 
+          color: '#1C1A17', fontWeight: 900, textDecoration: 'none', borderBottom: '3px solid #D4A53A' 
+        }}>
+          <ArrowRight size={20} style={{ transform: 'rotate(180deg)' }} /> گەڕانەوە بۆ چات
+        </Link>
       </div>
     </div>
   )

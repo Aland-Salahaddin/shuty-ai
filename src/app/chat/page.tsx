@@ -121,23 +121,39 @@ interface Session { id: string; title: string; created_at: string }
 
 /* ── Main Component ─────────────────────────────────────── */
 export default function ChatPage() {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [sessionId, setSessionId] = useState('')
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isSupportOpen, setIsSupportOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null)
   const [supportOpen, setSupportOpen] = useState(false)
-  const [isPro, setIsPro] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const { user, isLoaded } = useUser()
   const clerk = useClerk()
-  const authLoading = !isLoaded
+  
+  const metadata = user?.publicMetadata as any
+  const isBanned = metadata?.is_banned
+  const timeoutUntil = metadata?.timeout_until ? new Date(metadata.timeout_until) : null
+  const isTimedOut = timeoutUntil && timeoutUntil > new Date()
+  const currentPlan = metadata?.plan || 'FREE'
+
+  if (isLoaded && isBanned) {
+    return (
+      <div dir="rtl" style={{ minHeight: '100vh', background: '#1C1A17', color: '#B5462E', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'Vazirmatn', padding: 20, textAlign: 'center' }}>
+        <ShieldAlert size={80} style={{ marginBottom: 20 }} />
+        <h1 style={{ fontSize: 40, fontWeight: 900 }}>هەژمارەکەت بلۆک کراوە</h1>
+        <p style={{ fontSize: 18, fontWeight: 700, maxWidth: 500, marginTop: 10, color: '#F0E6D0' }}>بەهۆی سەرپێچی کردنی یاساکان، گەیشتنت بەم خزمەتگوزارییە نییە. ئەگەر پێتوایە هەڵەیەک ڕوویداوە پەیوەندیمان پێوە بکە.</p>
+        <button onClick={() => clerk.signOut()} style={{ marginTop: 30, background: '#B5462E', color: '#F0E6D0', border: 'none', padding: '12px 30px', fontWeight: 900, cursor: 'pointer', boxShadow: '4px 4px 0 #F0E6D0' }}>چوونە دەرەوە</button>
+      </div>
+    )
+  }
 
 
   useEffect(() => {
@@ -173,7 +189,7 @@ export default function ChatPage() {
   }
 
   const handleSend = async () => {
-    if (!input.trim() || loading) return
+    if (!input.trim() || loading || isTimedOut) return
     const userMsg: Message = { role: 'user', content: input }
     setMessages(prev => [...prev, userMsg])
     setInput('')
@@ -191,12 +207,12 @@ export default function ChatPage() {
           setMessages(prev => [...prev, limitMsg]);
           return;
         }
-        throw new Error(data.error || "Failed to send");
+        throw new Error(data.message || data.error || "Failed to send");
       }
       if (data.text) setMessages(prev => [...prev, { role: 'assistant', content: data.text }])
       fetchSessions()
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'ببوورە، پەیوەندی پچڕا. دووبارە هەوڵ بدەرەوە.' }])
+    } catch (err: any) {
+      setMessages(prev => [...prev, { role: 'assistant', content: err.message || 'ببوورە، پەیوەندی پچڕا. دووبارە هەوڵ بدەرەوە.' }])
     } finally {
       setLoading(false)
     }
@@ -412,16 +428,16 @@ export default function ChatPage() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <div style={{ fontSize: 10, color: '#6B7341', fontWeight: 600 }}>
-                  بەکارهێنەری {user?.publicMetadata?.plan === 'ULTRA' ? 'Ultra' : (user?.publicMetadata?.plan === 'PRO' ? 'Pro' : 'خۆڕایی')}
+                  بەکارهێنەری {currentPlan === 'ULTRA' ? 'Ultra' : (currentPlan === 'PRO' ? 'Pro' : 'خۆڕایی')}
                 </div>
                 {user?.primaryEmailAddress?.emailAddress === 'alandkurd485@gmail.com' && (
-                  <a href="/admin/support" onClick={(e) => e.stopPropagation()} style={{ 
+                  <Link href="/admin/dashboard" onClick={(e) => e.stopPropagation()} style={{ 
                     fontSize: 10, color: '#B5462E', fontWeight: 900, textDecoration: 'none',
                     background: '#F0E6D0', padding: '1px 4px', border: '1px solid #1C1A17',
                     boxShadow: '-1px 1px 0 #1C1A17'
                   }}>
                     ADMIN
-                  </a>
+                  </Link>
                 )}
               </div>
             </div>
@@ -573,23 +589,25 @@ export default function ChatPage() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
-              placeholder="پەیامەکەت لێرە بنووسە…"
+              placeholder={isTimedOut ? "ناتوانیت نامە بنێریت تا کاتەکەت تەواو دەبێت..." : "پەیامەکەت لێرە بنووسە…"}
               rows={2}
-              maxLength={user?.publicMetadata?.plan === 'ULTRA' ? SHUTY_CONFIG.ULTRA.maxCharacters : (user?.publicMetadata?.plan === 'PRO' ? SHUTY_CONFIG.PRO.maxCharacters : SHUTY_CONFIG.FREE.maxCharacters)}
+              disabled={isTimedOut}
+              maxLength={currentPlan === 'ULTRA' ? SHUTY_CONFIG.ULTRA.maxCharacters : (currentPlan === 'PRO' ? SHUTY_CONFIG.PRO.maxCharacters : SHUTY_CONFIG.FREE.maxCharacters)}
               style={{
                 flex: 1, padding: '14px 18px', background: 'transparent', border: 'none',
                 fontFamily: 'Vazirmatn', fontSize: 14, color: '#1C1A17', lineHeight: 1.6,
                 minHeight: 56, maxHeight: 160, resize: 'none',
+                opacity: isTimedOut ? 0.5 : 1
               }}
             />
             <button
               onClick={handleSend}
-              disabled={loading || !input.trim()}
+              disabled={loading || !input.trim() || isTimedOut}
               className="press-effect"
               style={{
-                padding: '0 20px', background: loading || !input.trim() ? '#C8A882' : '#B5462E',
+                padding: '0 20px', background: loading || !input.trim() || isTimedOut ? '#C8A882' : '#B5462E',
                 border: 'none', borderRight: '3px solid #1C1A17',
-                cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
+                cursor: loading || !input.trim() || isTimedOut ? 'not-allowed' : 'pointer',
                 color: '#F0E6D0', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'background 0.15s',
                 flexShrink: 0,
@@ -615,10 +633,10 @@ export default function ChatPage() {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, padding: '0 4px' }}>
             <p style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn', fontWeight: 600 }}>
-              شوتی ژیری دەستکردە — لەوانەیە هەڵە بکات
+              {isTimedOut ? `تۆ بێدەنگ کراویت تا: ${timeoutUntil?.toLocaleString('ku-IQ')}` : 'شوتی ژیری دەستکردە — لەوانەیە هەڵە بکات'}
             </p>
             <p style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn', fontWeight: 800 }}>
-              {toArabicDigits(input.length)} / {toArabicDigits(user?.publicMetadata?.plan === 'ULTRA' ? SHUTY_CONFIG.ULTRA.maxCharacters : (user?.publicMetadata?.plan === 'PRO' ? SHUTY_CONFIG.PRO.maxCharacters : SHUTY_CONFIG.FREE.maxCharacters))} پیت
+              {toArabicDigits(input.length)} / {toArabicDigits(currentPlan === 'ULTRA' ? SHUTY_CONFIG.ULTRA.maxCharacters : (currentPlan === 'PRO' ? SHUTY_CONFIG.PRO.maxCharacters : SHUTY_CONFIG.FREE.maxCharacters))} پیت
             </p>
           </div>
         </div>

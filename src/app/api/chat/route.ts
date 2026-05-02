@@ -81,6 +81,30 @@ export async function POST(req: Request) {
       }, { status: 403 });
     }
 
+    // 2. Metadata check (Ban/Timeout/Plan)
+    const clerk = await clerkClient();
+    const userData = await clerk.users.getUser(userId);
+    const metadata = userData.publicMetadata as any;
+
+    // Check if Banned
+    if (metadata?.is_banned) {
+      return new NextResponse('Your account has been banned.', { status: 403 });
+    }
+
+    // Check if Timeout
+    if (metadata?.timeout_until && new Date(metadata.timeout_until) > new Date()) {
+      return new NextResponse(`You are timed out until ${new Date(metadata.timeout_until).toLocaleString()}`, { status: 403 });
+    }
+
+    // Auto-reset plan if expired
+    let currentPlan = metadata?.plan || 'FREE';
+    if (metadata?.plan_expiry && new Date(metadata.plan_expiry) < new Date()) {
+      await clerk.users.updateUser(userId, {
+        publicMetadata: { ...metadata, plan: 'FREE', plan_expiry: null }
+      });
+      currentPlan = 'FREE';
+    }
+
     const { messages } = await req.json();
     const key = OPENROUTER_KEYS[Math.floor(Math.random() * OPENROUTER_KEYS.length)];
     const serperKey = SERPER_KEYS[Math.floor(Math.random() * SERPER_KEYS.length)];
