@@ -45,7 +45,7 @@ export default function PricingPage() {
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 30px 0', flex: 1 }}>
             <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 600 }}>
-              <ShieldCheck size={20} color="#6B7341" /> {toArabicDigits(SHUTY_CONFIG.FREE.maxTokensPerDay.toLocaleString())} تۆکنی ڕۆژانە
+              <ShieldCheck size={20} color="#6B7341" /> {toArabicDigits(SHUTY_CONFIG.FREE.maxTokensPerDay.toLocaleString())} خاڵی ڕۆژانە
             </li>
             <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 600 }}>
               <ShieldCheck size={20} color="#6B7341" /> {toArabicDigits(SHUTY_CONFIG.FREE.maxImagesPerDay)} شکاندنەوەی وێنە
@@ -82,7 +82,7 @@ export default function PricingPage() {
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 30px 0', flex: 1 }}>
             <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800 }}>
-              <Zap size={20} /> {toArabicDigits(SHUTY_CONFIG.PRO.maxTokensPerDay.toLocaleString())} تۆکنی ڕۆژانە
+              <Zap size={20} /> {toArabicDigits(SHUTY_CONFIG.PRO.maxTokensPerDay.toLocaleString())} خاڵی ڕۆژانە
             </li>
             <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800 }}>
               <Zap size={20} /> {toArabicDigits(SHUTY_CONFIG.PRO.maxImagesPerDay)} شکاندنەوەی وێنە
@@ -116,7 +116,7 @@ export default function PricingPage() {
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 30px 0', flex: 1 }}>
             <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800 }}>
-              <Rocket size={20} /> {toArabicDigits(SHUTY_CONFIG.ULTRA.maxTokensPerDay.toLocaleString())} تۆکنی ڕۆژانە
+              <Rocket size={20} /> {toArabicDigits(SHUTY_CONFIG.ULTRA.maxTokensPerDay.toLocaleString())} خاڵی ڕۆژانە
             </li>
             <li style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800 }}>
               <Rocket size={20} /> {toArabicDigits(SHUTY_CONFIG.ULTRA.maxImagesPerDay)} شکاندنەوەی وێنە

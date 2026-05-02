@@ -431,7 +431,7 @@ export default function ChatPage() {
                   بەکارهێنەری {currentPlan === 'ULTRA' ? 'Ultra' : (currentPlan === 'PRO' ? 'Pro' : 'خۆڕایی')}
                 </div>
                 <div style={{ fontSize: 9, color: '#6B7341', opacity: 0.8, marginTop: 2 }}>
-                  {toArabicDigits((user?.publicMetadata?.usage as any)?.tokens || 0)} / {toArabicDigits(((SHUTY_CONFIG as any)[currentPlan]).maxTokensPerDay.toLocaleString())} تۆکن
+                  {toArabicDigits((user?.publicMetadata?.usage as any)?.tokens || 0)} / {toArabicDigits(((SHUTY_CONFIG as any)[currentPlan]).maxTokensPerDay.toLocaleString())} خاڵ
                 </div>
                 {user?.primaryEmailAddress?.emailAddress === 'alandkurd485@gmail.com' && (
                   <Link href="/admin/dashboard" onClick={(e) => e.stopPropagation()} style={{ 

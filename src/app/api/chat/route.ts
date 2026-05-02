@@ -105,7 +105,7 @@ export async function POST(req: Request) {
     if (tokensUsedToday >= maxTokens) {
       return new NextResponse(JSON.stringify({
         error: 'LIMIT_REACHED',
-        message: `تۆ سنووری تۆکنەکانی ئەمڕۆت تەواو کردووە (${maxTokens.toLocaleString()} تۆکن). بۆ بەردەوامبوون هەژمارەکەت بەرز بکەرەوە.`
+        message: `تۆ سنووری خاڵەکانی ئەمڕۆت تەواو کردووە (${maxTokens.toLocaleString()} خاڵ). بۆ بەردەوامبوون هەژمارەکەت بەرز بکەرەوە.`
       }), { status: 403 })
     }
 
