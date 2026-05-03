@@ -102,14 +102,14 @@ export interface Message {
 }
 
 /** Save a message to D1 */
-export async function saveMessage(msg: Omit<Message, 'id' | 'created_at'>): Promise<void> {
+export async function saveMessage(msg: Omit<Message, 'id' | 'created_at'> & { title?: string }): Promise<void> {
   const { v4: uuidv4 } = await import('uuid')
   const id = uuidv4()
   
   // Ensure session exists
   await d1Query(
     `INSERT OR IGNORE INTO sessions (id, user_id, title) VALUES (?, ?, ?)`,
-    [msg.session_id, msg.user_id, msg.content.substring(0, 30) || "وێنە"]
+    [msg.session_id, msg.user_id, msg.title || msg.content.substring(0, 30) || "وێنە"]
   )
 
   await d1Query(

@@ -172,6 +172,7 @@ function ChatContent() {
   const [modalOpen, setModalOpen] = useState(false)
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const currentSessionIdRef = useRef('') // NEW: Track the LATEST session ID
   const router = useRouter()
   const { user, isLoaded } = useUser()
   const clerk = useClerk()
@@ -199,10 +200,14 @@ function ChatContent() {
     if (user) {
       const sid = newSessionId()
       setSessionId(sid)
+      currentSessionIdRef.current = sid
       fetchSessions()
-      
     }
   }, [user])
+
+  useEffect(() => {
+    currentSessionIdRef.current = sessionId
+  }, [sessionId])
 
   // Handle query params (like openSupport)
   useEffect(() => {
@@ -334,7 +339,7 @@ function ChatContent() {
         const errorMsg = errorData.message || errorData.error || "کێشەیەک لە پەیوەندی دروست بوو. تکایە دڵنیا بەرەوە کلیلەکانی API و داتابەیس جێگیر کراون.";
         
         // Only update UI if we are still in the same session
-        if (sessionId === sendingSessionId) {
+        if (currentSessionIdRef.current === sendingSessionId) {
           const errorBubble: Message = {
             role: 'assistant',
             content: `❌ **هەڵە:** ${errorMsg}`,
@@ -346,14 +351,14 @@ function ChatContent() {
       
       const data = await response.json();
       
-      // Only update UI if we are still in the same session
-      if (sessionId === sendingSessionId) {
+      // ONLY update UI if we are still in the SAME session as when we started
+      if (currentSessionIdRef.current === sendingSessionId) {
         if (data.text) setMessages(prev => [...prev, { role: 'assistant', content: data.text }])
       }
       fetchSessions()
     } catch (err: any) {
       const errMsg = err.message || 'ببوورە، کێشەیەک لە پەیوەندی دروست بوو.';
-      if (sessionId === sendingSessionId) {
+      if (currentSessionIdRef.current === sendingSessionId) {
         setMessages(prev => [...prev, { 
           role: 'assistant', 
           content: `❌ **هەڵە:** ${errMsg}\n\nتکایە دووبارە هەوڵ بدەرەوە یان پەیوەندیمان پێوە بکە.` 
@@ -402,10 +407,18 @@ function ChatContent() {
     } catch {}
   }
 
-  const startNewChat = () => { setSessionId(newSessionId()); setMessages([]) }
+  const startNewChat = () => {
+    const sid = newSessionId()
+    setSessionId(sid)
+    currentSessionIdRef.current = sid
+    setMessages([])
+    if (window.innerWidth < 768) setSidebarOpen(false)
+  }
+
   const selectSession = (sid: string) => { 
     if (sid === sessionId) return
     setSessionId(sid)
+    currentSessionIdRef.current = sid
     fetchMessages(sid) 
     if (window.innerWidth < 768) setSidebarOpen(false)
   }

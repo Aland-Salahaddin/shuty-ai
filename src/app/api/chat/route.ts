@@ -60,6 +60,30 @@ async function getSearchQuery(messages: any[], key: string, model: string) {
   }
 }
 
+async function generateTitle(content: string, key: string, model: string) {
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          { role: "system", content: "ببە بە شارەزایەک لە دروستکردنی ناونیشانی کورت. بەپێی ئەم پەیامەی خوارەوە، ناونیشانێکی زۆر کورت (تەنها ٣ بۆ ٤ وشە) بە زمانی کوردی سۆرانی دروست بکە کە باس لە ناوەڕۆکی بابەتەکە بکات. تەنها ناونیشانەکە بنووسە بەبێ هیچ دەقێکی زیادە." },
+          { role: "user", content: content }
+        ],
+        max_tokens: 30
+      })
+    });
+    const data = await res.json();
+    let title = data.choices?.[0]?.message?.content?.trim() || content.substring(0, 30);
+    // Remove quotes if AI added them
+    title = title.replace(/^["']|["']$/g, '');
+    return title;
+  } catch {
+    return content.substring(0, 30);
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const { userId } = await auth();
@@ -155,12 +179,22 @@ export async function POST(req: Request) {
     // Save user message to history if sessionId exists
     if (sessionId) {
       try {
+        const key = OPENROUTER_KEYS[Math.floor(Math.random() * OPENROUTER_KEYS.length)];
+        const userModel = planConfig.model;
+        
+        let aiTitle = undefined;
+        // If it's the first message of the session, generate a title
+        if (messages.length === 1) {
+          aiTitle = await generateTitle(lastMsg.content || "وێنە", key, userModel);
+        }
+
         await saveMessage({
           user_id: userId,
           session_id: sessionId,
           role: 'user',
           content: lastMsg.content || "",
-          image: lastMsg.image
+          image: lastMsg.image,
+          title: aiTitle
         });
       } catch (saveErr: any) {
         console.error("User Message Save Error:", saveErr);
