@@ -58,7 +58,7 @@ export default function AdminDashboard() {
   )
 
   const filteredUsers = users.filter(u => {
-    const email = (u.primaryEmailAddress?.emailAddress || '').toLowerCase()
+    const email = (u.emailAddresses?.[0]?.emailAddress || '').toLowerCase()
     const fullName = (u.fullName || '').toLowerCase()
     const s = search.toLowerCase()
     return email.includes(s) || fullName.includes(s)
@@ -135,7 +135,7 @@ export default function AdminDashboard() {
                 <tr key={u.id} style={{ borderBottom: '2px solid #1C1A17', opacity: updating === u.id ? 0.5 : 1 }}>
                   <td style={{ padding: 15 }}>
                     <div style={{ fontWeight: 900 }}>{u.fullName || u.username || 'بێ ناو'}</div>
-                    <div style={{ fontSize: 12, opacity: 0.6 }}>{u.primaryEmailAddress?.emailAddress || 'بێ ئیمەیڵ'}</div>
+                    <div style={{ fontSize: 12, opacity: 0.6 }}>{u.emailAddresses?.[0]?.emailAddress || 'بێ ئیمەیڵ'}</div>
                   </td>
                   <td style={{ padding: 15 }}>
                     <select 
@@ -163,7 +163,7 @@ export default function AdminDashboard() {
                     </div>
                   </td>
                    <td style={{ padding: 15 }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       <button 
                         onClick={() => handleUpdate(u.id, 'BAN', !u.publicMetadata?.is_banned)}
                         style={{ 
@@ -176,7 +176,7 @@ export default function AdminDashboard() {
                         {u.publicMetadata?.is_banned ? 'UNLOCK' : 'BAN'}
                       </button>
 
-                      <div style={{ display: 'flex', gap: 5 }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                         {['1H', '24H', '1W', 'NONE'].map((t) => (
                           <button
                             key={t}

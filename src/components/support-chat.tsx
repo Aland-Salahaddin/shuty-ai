@@ -96,7 +96,11 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
     const msgContent = input.trim().substring(0, 500)
     const imageToSend = selectedImage || imgOverride || null
     
-    if (!supabase || (!msgContent && !imageToSend) || !roomId || !user || isSending) return
+    const metadata = user?.publicMetadata as any
+    const timeoutUntil = metadata?.timeout_until ? new Date(metadata.timeout_until) : null
+    const isTimedOut = timeoutUntil && timeoutUntil > new Date()
+
+    if (!supabase || (!msgContent && !imageToSend) || !roomId || !user || isSending || isTimedOut) return
 
     setInput('')
     setSelectedImage(null)
@@ -272,52 +276,70 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
       )}
 
       {/* Input */}
-      <div style={{ padding: 16, borderTop: '3px solid #1C1A17', background: '#EDE0C5', display: 'flex', gap: 8 }}>
-        <input
-          type="file"
-          id="support-img"
-          hidden
-          accept="image/*"
-          onChange={handleImageUpload}
-        />
-        <label
-          htmlFor="support-img"
-          style={{
-            width: 44, height: 44, background: '#FFFFFF', border: '2.5px solid #1C1A17',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-            boxShadow: '-3px 3px 0 0 #1C1A17'
-          }}
-        >
-          <ImageIcon size={20} color="#6B7341" />
-        </label>
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSend()}
-          onPaste={handlePaste}
-          maxLength={500}
-          placeholder="لێرە بنووسە..."
-          style={{
-            flex: 1, padding: '10px 14px', background: '#F0E6D0',
-            border: '2.5px solid #1C1A17', outline: 'none',
-            fontFamily: 'Vazirmatn', fontWeight: 700, fontSize: isMaximized ? 15 : 13
-          }}
-        />
-        <button
-          onClick={() => handleSend()}
-          disabled={isSending}
-          style={{
-            width: 44, height: 44, background: '#B5462E', color: '#F0E6D0',
-            border: '2.5px solid #1C1A17', boxShadow: '-3px 3px 0 0 #1C1A17',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: isSending ? 'not-allowed' : 'pointer',
-            opacity: isSending ? 0.6 : 1
-          }}
-          className="press-effect"
-        >
-          <Send size={18} />
-        </button>
-      </div>
+      {(() => {
+        const metadata = user?.publicMetadata as any
+        const tUntil = metadata?.timeout_until ? new Date(metadata.timeout_until) : null
+        const timedOut = tUntil && tUntil > new Date()
+        
+        if (timedOut) {
+          return (
+            <div style={{ padding: 20, background: '#1C1A17', color: '#F0E6D0', textAlign: 'center', borderTop: '3px solid #1C1A17', fontFamily: 'Vazirmatn' }}>
+              <ShieldCheck size={24} style={{ marginBottom: 8, color: '#B5462E', margin: '0 auto' }} />
+              <div style={{ fontWeight: 900, fontSize: 14 }}>تۆ بۆ ماوەیەکی کاتی لە چاتی ڕاستەوخۆ بێبەش کراویت</div>
+              <div style={{ fontSize: 11, opacity: 0.7 }}>کاتی کۆتایی هاتن: {tUntil?.toLocaleString('ku-IQ')}</div>
+            </div>
+          )
+        }
+
+        return (
+          <div style={{ padding: 16, borderTop: '3px solid #1C1A17', background: '#EDE0C5', display: 'flex', gap: 8 }}>
+            <input
+              type="file"
+              id="support-img"
+              hidden
+              accept="image/*"
+              onChange={handleImageUpload}
+            />
+            <label
+              htmlFor="support-img"
+              style={{
+                width: 44, height: 44, background: '#FFFFFF', border: '2.5px solid #1C1A17',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                boxShadow: '-3px 3px 0 0 #1C1A17'
+              }}
+            >
+              <ImageIcon size={20} color="#6B7341" />
+            </label>
+            <input
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSend()}
+              onPaste={handlePaste}
+              maxLength={500}
+              placeholder="لێرە بنووسە..."
+              style={{
+                flex: 1, padding: '10px 14px', background: '#F0E6D0',
+                border: '2.5px solid #1C1A17', outline: 'none',
+                fontFamily: 'Vazirmatn', fontWeight: 700, fontSize: isMaximized ? 15 : 13
+              }}
+            />
+            <button
+              onClick={() => handleSend()}
+              disabled={isSending}
+              style={{
+                width: 44, height: 44, background: '#B5462E', color: '#F0E6D0',
+                border: '2.5px solid #1C1A17', boxShadow: '-3px 3px 0 0 #1C1A17',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: isSending ? 'not-allowed' : 'pointer',
+                opacity: isSending ? 0.6 : 1
+              }}
+              className="press-effect"
+            >
+              <Send size={18} />
+            </button>
+          </div>
+        )
+      })()}
     </div>
   )
 }

@@ -314,7 +314,7 @@ function ChatContent() {
     const imageToSend = retryImage !== undefined ? retryImage : selectedImage
 
     const safeInput = String(contentToSend || '')
-    if ((!safeInput.trim() && !imageToSend) || loading || isTimedOut) return
+    if ((!safeInput.trim() && !imageToSend) || loading) return
     
     const userMsg: Message = { role: 'user', content: safeInput, image: imageToSend || undefined }
     

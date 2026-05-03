@@ -33,6 +33,7 @@ export default function AdminSupportPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const [updating, setUpdating] = useState<string | null>(null)
 
   // 1. Security Check
   useEffect(() => {
@@ -180,6 +181,24 @@ export default function AdminSupportPage() {
     }
   }
 
+  const handleUpdate = async (uid: string, type: string, value: any) => {
+    setUpdating(uid)
+    try {
+      const res = await fetch('/api/admin/update-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: uid, type, value })
+      })
+      if (!res.ok) throw new Error('Failed to update')
+      alert('Updated successfully')
+      fetchRooms()
+    } catch (e) {
+      alert('Error updating user')
+    } finally {
+      setUpdating(null)
+    }
+  }
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
@@ -246,22 +265,49 @@ export default function AdminSupportPage() {
                 </h2>
                 <p style={{ fontSize: 12, color: '#6B7341', fontWeight: 700 }}>{selectedRoom.user_email}</p>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                {!selectedRoom.is_accepted && (
-                  <button 
-                    onClick={() => handleAccept(selectedRoom.id)}
-                    style={{
-                      background: '#D4A53A', color: '#1C1A17', border: '3px solid #1C1A17',
-                      padding: '8px 16px', fontWeight: 900, cursor: 'pointer',
-                      boxShadow: '-3px 3px 0 #1C1A17'
-                    }}
-                    className="press-effect"
-                  >
-                    Accept Request
-                  </button>
-                )}
-                <div style={{ background: '#EDE0C5', border: '2px solid #1C1A17', padding: '6px 12px', fontSize: 10, fontWeight: 800 }}>
-                  ID: {selectedRoom.user_id}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {!selectedRoom.is_accepted && (
+                    <button 
+                      onClick={() => handleAccept(selectedRoom.id)}
+                      style={{
+                        background: '#D4A53A', color: '#1C1A17', border: '3px solid #1C1A17',
+                        padding: '8px 16px', fontWeight: 900, cursor: 'pointer',
+                        boxShadow: '-3px 3px 0 #1C1A17'
+                      }}
+                      className="press-effect"
+                    >
+                      Accept Request
+                    </button>
+                  )}
+                  <div style={{ background: '#EDE0C5', border: '2px solid #1C1A17', padding: '6px 12px', fontSize: 10, fontWeight: 800 }}>
+                    ID: {selectedRoom.user_id}
+                  </div>
+                </div>
+
+                {/* Moderation Controls */}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                   <button 
+                      disabled={!!updating}
+                      onClick={() => handleUpdate(selectedRoom.user_id, 'BAN', true)}
+                      style={{ 
+                        background: '#1C1A17', color: '#F0E6D0', border: '2.5px solid #1C1A17',
+                        fontSize: 10, padding: '4px 10px', fontWeight: 900, cursor: 'pointer', opacity: updating ? 0.5 : 1
+                      }}
+                    >BAN USER</button>
+                    
+                    {['1H', '24H', '1W', 'NONE'].map((t) => (
+                      <button
+                        key={t}
+                        disabled={!!updating}
+                        onClick={() => handleUpdate(selectedRoom.user_id, 'TIMEOUT', t)}
+                        style={{ 
+                          background: t === 'NONE' ? '#6B7341' : '#B5462E', 
+                          color: '#F0E6D0', border: '2.5px solid #1C1A17',
+                          fontSize: 10, padding: '4px 8px', fontWeight: 900, cursor: 'pointer', opacity: updating ? 0.5 : 1
+                        }}
+                      >{t === 'NONE' ? 'FREE' : `TO ${t}`}</button>
+                    ))}
                 </div>
               </div>
             </div>
