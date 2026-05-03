@@ -134,6 +134,42 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
     }
   }
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    const files = e.clipboardData.files;
+
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].type.startsWith('image/')) {
+          if (files[i].size > 2 * 1024 * 1024) {
+            alert('قەبارەی وێنەکە نابێت لە ٢ مێگابایت زیاتر بێت.');
+            return;
+          }
+          const reader = new FileReader();
+          reader.onloadend = () => setSelectedImage(reader.result as string);
+          reader.readAsDataURL(files[i]);
+          return;
+        }
+      }
+    }
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          if (file.size > 2 * 1024 * 1024) {
+            alert('قەبارەی وێنەکە نابێت لە ٢ مێگابایت زیاتر بێت.');
+            return;
+          }
+          const reader = new FileReader();
+          reader.onloadend = () => setSelectedImage(reader.result as string);
+          reader.readAsDataURL(file);
+          return;
+        }
+      }
+    }
+  }
+
   // Auto scroll
   useEffect(() => {
     if (scrollRef.current) {
@@ -238,6 +274,7 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSend()}
+          onPaste={handlePaste}
           maxLength={500}
           placeholder="لێرە بنووسە..."
           style={{

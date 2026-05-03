@@ -134,6 +134,42 @@ export default function AdminSupportPage() {
       reader.readAsDataURL(file)
     }
   }
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    const files = e.clipboardData.files;
+
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].type.startsWith('image/')) {
+          if (files[i].size > 2 * 1024 * 1024) {
+            alert('Image too big. Max 2MB.');
+            return;
+          }
+          const reader = new FileReader();
+          reader.onloadend = () => setSelectedImage(reader.result as string);
+          reader.readAsDataURL(files[i]);
+          return;
+        }
+      }
+    }
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          if (file.size > 2 * 1024 * 1024) {
+            alert('Image too big. Max 2MB.');
+            return;
+          }
+          const reader = new FileReader();
+          reader.onloadend = () => setSelectedImage(reader.result as string);
+          reader.readAsDataURL(file);
+          return;
+        }
+      }
+    }
+  }
   
   const handleAccept = async (rid: string) => {
     if (!supabase) return
@@ -285,6 +321,7 @@ export default function AdminSupportPage() {
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSend()}
+                    onPaste={handlePaste}
                     placeholder="Reply to user..."
                     style={{
                       flex: 1, padding: '16px 24px', background: '#F0E6D0',
