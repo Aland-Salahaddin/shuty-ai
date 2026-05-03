@@ -304,6 +304,7 @@ function ChatContent() {
   }
 
   const handleSend = async (retryContent?: string, retryImage?: string) => {
+    const sendingSessionId = sessionId // Capture the session ID when the request starts
     const contentToSend = retryContent !== undefined ? retryContent : input
     const imageToSend = retryImage !== undefined ? retryImage : selectedImage
 
@@ -323,7 +324,7 @@ function ChatContent() {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...messages, userMsg], sessionId }),
+        body: JSON.stringify({ messages: [...messages, userMsg], sessionId: sendingSessionId }),
       })
       
       if (!response.ok) {
@@ -332,24 +333,32 @@ function ChatContent() {
         
         const errorMsg = errorData.message || errorData.error || "کێشەیەک لە پەیوەندی دروست بوو. تکایە دڵنیا بەرەوە کلیلەکانی API و داتابەیس جێگیر کراون.";
         
-        const errorBubble: Message = {
-          role: 'assistant',
-          content: `❌ **هەڵە:** ${errorMsg}`,
-        };
-        setMessages(prev => [...prev, errorBubble]);
+        // Only update UI if we are still in the same session
+        if (sessionId === sendingSessionId) {
+          const errorBubble: Message = {
+            role: 'assistant',
+            content: `❌ **هەڵە:** ${errorMsg}`,
+          };
+          setMessages(prev => [...prev, errorBubble]);
+        }
         return;
       }
       
       const data = await response.json();
       
-      if (data.text) setMessages(prev => [...prev, { role: 'assistant', content: data.text }])
+      // Only update UI if we are still in the same session
+      if (sessionId === sendingSessionId) {
+        if (data.text) setMessages(prev => [...prev, { role: 'assistant', content: data.text }])
+      }
       fetchSessions()
     } catch (err: any) {
       const errMsg = err.message || 'ببوورە، کێشەیەک لە پەیوەندی دروست بوو.';
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: `❌ **هەڵە:** ${errMsg}\n\nتکایە دووبارە هەوڵ بدەرەوە یان پەیوەندیمان پێوە بکە.` 
-      }])
+      if (sessionId === sendingSessionId) {
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: `❌ **هەڵە:** ${errMsg}\n\nتکایە دووبارە هەوڵ بدەرەوە یان پەیوەندیمان پێوە بکە.` 
+        }])
+      }
     } finally {
       setLoading(false)
     }
