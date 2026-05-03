@@ -754,8 +754,8 @@ function ChatContent() {
                   </button>
                 )}
               </div>
-            </div>
-          ))}
+            )
+          })}
 
           {loading && (
             <div style={{ display: 'flex', flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 12, maxWidth: '75%', alignSelf: 'flex-start' }}>
