@@ -57,10 +57,12 @@ export default function AdminDashboard() {
     </div>
   )
 
-  const filteredUsers = users.filter(u => 
-    u.primaryEmailAddress?.emailAddress?.toLowerCase().includes(search.toLowerCase()) ||
-    u.fullName?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredUsers = users.filter(u => {
+    const email = (u.primaryEmailAddress?.emailAddress || '').toLowerCase()
+    const fullName = (u.fullName || '').toLowerCase()
+    const s = search.toLowerCase()
+    return email.includes(s) || fullName.includes(s)
+  })
 
   return (
     <div dir="rtl" style={{ minHeight: '100vh', background: '#F0E6D0', fontFamily: 'Vazirmatn', color: '#1C1A17', padding: '40px 20px' }}>
@@ -132,8 +134,8 @@ export default function AdminDashboard() {
               {filteredUsers.map(u => (
                 <tr key={u.id} style={{ borderBottom: '2px solid #1C1A17', opacity: updating === u.id ? 0.5 : 1 }}>
                   <td style={{ padding: 15 }}>
-                    <div style={{ fontWeight: 900 }}>{u.fullName || 'بێ ناو'}</div>
-                    <div style={{ fontSize: 12, opacity: 0.6 }}>{u.primaryEmailAddress?.emailAddress}</div>
+                    <div style={{ fontWeight: 900 }}>{u.fullName || u.username || 'بێ ناو'}</div>
+                    <div style={{ fontSize: 12, opacity: 0.6 }}>{u.primaryEmailAddress?.emailAddress || 'بێ ئیمەیڵ'}</div>
                   </td>
                   <td style={{ padding: 15 }}>
                     <select 
