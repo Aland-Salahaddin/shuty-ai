@@ -228,15 +228,22 @@ function ChatContent() {
   }
 
   const fetchMessages = async (sid: string) => {
+    setLoading(true)
+    setMessages([]) // Clear immediately to show it's loading new content
     try {
       const res = await fetch(`/api/history?session_id=${sid}`)
+      if (!res.ok) throw new Error("Failed to load messages")
       const data = await res.json()
       setMessages(data.messages ? data.messages.map((m: any) => ({ 
         role: m.role, 
         content: m.content,
         image: m.image 
       })) : [])
-    } catch {}
+    } catch (err) {
+      console.error("Fetch Messages Error:", err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -381,7 +388,12 @@ function ChatContent() {
   }
 
   const startNewChat = () => { setSessionId(newSessionId()); setMessages([]) }
-  const selectSession = (sid: string) => { setSessionId(sid); fetchMessages(sid) }
+  const selectSession = (sid: string) => { 
+    if (sid === sessionId) return
+    setSessionId(sid)
+    fetchMessages(sid) 
+    if (window.innerWidth < 768) setSidebarOpen(false)
+  }
   const handleLogout = async () => {
     await clerk.signOut({ redirectUrl: '/' })
   }

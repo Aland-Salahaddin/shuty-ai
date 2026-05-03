@@ -1,7 +1,6 @@
 'use client'
 
-import { X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { X, AlertTriangle } from 'lucide-react'
 
 interface ModalProps {
   isOpen: boolean
@@ -18,49 +17,107 @@ export default function Modal({ isOpen, onClose, onConfirm, title, message }: Mo
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" 
+        className="absolute inset-0 bg-[#1C1A17]/60 backdrop-blur-sm" 
         onClick={onClose}
       />
       
-      {/* Modal Content */}
-      <div className="relative w-full max-w-md glass border border-[oklch(0.30_0.04_250/0.4)] rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+      {/* Modal Content - Shuty Style */}
+      <div style={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: 420,
+        background: '#F0E6D0',
+        border: '4px solid #1C1A17',
+        boxShadow: '-12px 12px 0 0 #1C1A17',
+        padding: 32,
+        direction: 'rtl',
+        fontFamily: 'Vazirmatn'
+      }} className="animate-in zoom-in-95 duration-200">
+        
+        {/* Close Button */}
         <button 
           onClick={onClose}
-          className="absolute top-4 left-4 p-2 hover:bg-white/5 rounded-full transition-colors"
+          style={{
+            position: 'absolute',
+            top: 16,
+            left: 16,
+            background: 'none',
+            border: '2px solid #1C1A17',
+            padding: 4,
+            cursor: 'pointer',
+            color: '#1C1A17',
+            boxShadow: '-2px 2px 0 0 #1C1A17'
+          }}
         >
-          <X size={20} className="text-[oklch(0.65_0.02_240)]" />
+          <X size={18} />
         </button>
 
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-6">
-            <div className="w-8 h-8 rounded-full border-2 border-red-500/50 flex items-center justify-center text-red-500 font-bold text-xl">!</div>
+        <div style={{ textAlign: 'center' }}>
+          {/* Alert Icon */}
+          <div style={{
+            width: 64,
+            height: 64,
+            background: 'rgba(181, 70, 46, 0.1)',
+            border: '2.5px dashed #B5462E',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 20px',
+            transform: 'rotate(-3deg)'
+          }}>
+            <AlertTriangle size={32} color="#B5462E" />
           </div>
           
-          <h3 className="text-xl font-bold text-white">{title}</h3>
-          <p className="text-[oklch(0.65_0.02_240)] text-sm leading-relaxed">
+          <h3 style={{ fontSize: 20, fontWeight: 900, color: '#1C1A17', marginBottom: 12 }}>{title}</h3>
+          <p style={{ fontSize: 13, color: '#6B7341', fontWeight: 700, lineHeight: 1.6, marginBottom: 32 }}>
             {message}
           </p>
         </div>
 
-        <div className="flex gap-3 mt-10">
+        <div style={{ display: 'flex', gap: 16 }}>
           <button
             onClick={onConfirm}
-            className="flex-1 py-3.5 rounded-xl font-bold transition-all hover:brightness-110 active:scale-95"
+            className="press-effect"
             style={{
-              background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
-              color: 'white'
+              flex: 1,
+              padding: '12px',
+              background: '#B5462E',
+              color: '#F0E6D0',
+              border: '3px solid #1C1A17',
+              boxShadow: '-4px 4px 0 0 #1C1A17',
+              fontWeight: 900,
+              fontSize: 14,
+              cursor: 'pointer'
             }}
           >
             سڕینەوە
           </button>
           <button
             onClick={onClose}
-            className="flex-1 py-3.5 rounded-xl font-bold glass border border-white/10 hover:bg-white/5 transition-all active:scale-95 text-white"
+            className="press-effect"
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: '#D4A53A',
+              color: '#1C1A17',
+              border: '3px solid #1C1A17',
+              boxShadow: '-4px 4px 0 0 #1C1A17',
+              fontWeight: 900,
+              fontSize: 14,
+              cursor: 'pointer'
+            }}
           >
             پاشگەزبوونەوە
           </button>
         </div>
       </div>
+      
+      <style jsx>{`
+        .press-effect:active {
+          transform: translate(2px, 2px);
+          box-shadow: 0 0 0 0 transparent !important;
+        }
+      `}</style>
     </div>
   )
 }
