@@ -680,39 +680,41 @@ function ChatContent() {
             </div>
           )}
 
-          {messages.map((m, i) => (
-            <div key={i} style={{
-              display: 'flex',
-              flexDirection: m.role === 'user' ? 'row' : 'row-reverse',
-              alignItems: 'flex-start', gap: 12,
-              maxWidth: '75%',
-              alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-            }}>
-              {/* Avatar */}
-              <div style={{
-                width: 36, height: 36, flexShrink: 0,
-                border: '2.5px solid #1C1A17',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: 'Vazirmatn', fontWeight: 800, fontSize: 14,
-                background: m.role === 'user' ? '#B5462E' : '#EDE0C5',
-                color: m.role === 'user' ? '#F0E6D0' : '#1C1A17',
-                transform: `rotate(${m.role === 'user' ? '1deg' : '-1deg'})`,
-                boxShadow: m.role === 'user' ? '-3px 3px 0 0 #1C1A17' : '-3px 3px 0 0 #1C1A17',
+          {messages.map((m, i) => {
+            const isUser = String(m.role).toLowerCase() === 'user'
+            return (
+              <div key={i} style={{
+                display: 'flex',
+                flexDirection: isUser ? 'row-reverse' : 'row',
+                alignItems: 'flex-start', gap: 12,
+                maxWidth: '75%',
+                alignSelf: isUser ? 'flex-end' : 'flex-start',
               }}>
-                {m.role === 'user' ? 'ب' : 'ش'}
-              </div>
+                {/* Avatar */}
+                <div style={{
+                  width: 36, height: 36, flexShrink: 0,
+                  border: '2.5px solid #1C1A17',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'Vazirmatn', fontWeight: 800, fontSize: 14,
+                  background: isUser ? '#B5462E' : '#EDE0C5',
+                  color: isUser ? '#F0E6D0' : '#1C1A17',
+                  transform: `rotate(${isUser ? '1deg' : '-1deg'})`,
+                  boxShadow: isUser ? '-3px 3px 0 0 #1C1A17' : '-3px 3px 0 0 #1C1A17',
+                }}>
+                  {isUser ? 'ب' : 'ش'}
+                </div>
 
-              {/* Bubble */}
-              <div style={{
-                padding: '14px 20px', 
-                background: m.content.includes('❌ **هەڵە:**') ? 'rgba(181,70,46,0.1)' : (m.role === 'user' ? '#F0E6D0' : '#EDE0C5'), 
-                border: `2.5px solid ${m.role === 'user' ? '#B5462E' : '#1C1A17'}`, 
-                boxShadow: '-5px 5px 0 0 #1C1A17',
-                fontSize: 14, lineHeight: 1.6, color: '#1C1A17',
-                fontFamily: 'Vazirmatn',
-                transform: `rotate(${m.role === 'user' ? '0.5deg' : '-0.5deg'})`,
-              }}>
-                <div style={{ marginBottom: m.content.includes('❌ **هەڵە:**') ? 12 : 0 }}>
+                {/* Bubble */}
+                <div style={{
+                  padding: '14px 20px', 
+                  background: m.content.includes('❌ **هەڵە:**') ? 'rgba(181,70,46,0.1)' : (isUser ? '#F0E6D0' : '#EDE0C5'), 
+                  border: `2.5px solid ${isUser ? '#B5462E' : '#1C1A17'}`, 
+                  boxShadow: '-5px 5px 0 0 #1C1A17',
+                  fontSize: 14, lineHeight: 1.6, color: '#1C1A17',
+                  fontFamily: 'Vazirmatn',
+                  transform: `rotate(${isUser ? '0.5deg' : '-0.5deg'})`,
+                }}>
+                  <div style={{ marginBottom: m.content.includes('❌ **هەڵە:**') ? 12 : 0 }}>
                   {m.image && (
                     <img 
                       src={m.image} 
