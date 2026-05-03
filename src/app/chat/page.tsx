@@ -356,18 +356,21 @@ function ChatContent() {
     const files = e.clipboardData.files;
 
     if (files && files.length > 0) {
-      for (let i = 0; i < files.length; i++) {
-        if (files[i].type.startsWith('image/')) {
-          if (files[i].size > 2 * 1024 * 1024) {
+      const remaining = 10 - selectedImages.length
+      Array.from(files).slice(0, remaining).forEach(file => {
+        if (file.type.startsWith('image/')) {
+          if (file.size > 2 * 1024 * 1024) {
             alert('قەبارەی وێنە نابێت لە ٢ مێگابایت زیاتر بێت');
             return;
           }
           const reader = new FileReader();
-          reader.onloadend = () => setSelectedImage(reader.result as string);
-          reader.readAsDataURL(files[i]);
-          return;
+          reader.onloadend = () => {
+            setSelectedImages(prev => [...prev, reader.result as string].slice(0, 10));
+          };
+          reader.readAsDataURL(file);
         }
-      }
+      });
+      return;
     }
 
     for (let i = 0; i < items.length; i++) {
@@ -917,6 +920,7 @@ function ChatContent() {
               <input 
                 type="file" 
                 accept="image/*" 
+                multiple
                 ref={fileInputRef} 
                 onChange={handleImageSelect} 
                 style={{ display: 'none' }} 
