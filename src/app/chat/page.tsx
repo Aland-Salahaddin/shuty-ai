@@ -753,6 +753,7 @@ function ChatContent() {
                     <RefreshCcw size={12} /> دووبارە هەوڵ بدەرەوە
                   </button>
                 )}
+                </div>
               </div>
             )
           })}
