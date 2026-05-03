@@ -37,10 +37,10 @@ export async function d1Query<T = Record<string, unknown>>(
   if (!res.ok) {
     throw new Error(`D1 API Error (${res.status}): ${JSON.stringify(json.errors || json)}`)
   }
-  if (Array.isArray(json.result)) {
-    return json.result[0] as D1Result<T>
-  }
-  return json as D1Result<T>
+
+  // Cloudflare D1 Query API can return result as an array of results or a single result object
+  const resultData = Array.isArray(json.result) ? json.result[0] : (json.result || json)
+  return resultData as D1Result<T>
 }
 
 /** Ensure tables exist */

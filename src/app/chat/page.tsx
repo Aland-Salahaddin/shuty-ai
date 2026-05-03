@@ -229,16 +229,22 @@ function ChatContent() {
 
   const fetchMessages = async (sid: string) => {
     setLoading(true)
-    setMessages([]) // Clear immediately to show it's loading new content
+    setMessages([])
     try {
       const res = await fetch(`/api/history?session_id=${sid}`)
-      if (!res.ok) throw new Error("Failed to load messages")
+      if (!res.ok) throw new Error(`History API failed: ${res.status}`)
       const data = await res.json()
-      setMessages(data.messages ? data.messages.map((m: any) => ({ 
-        role: m.role, 
-        content: m.content,
-        image: m.image 
-      })) : [])
+      console.log("History Load Success:", data)
+      
+      if (data.messages && Array.isArray(data.messages)) {
+        setMessages(data.messages.map((m: any) => ({ 
+          role: m.role, 
+          content: m.content,
+          image: m.image 
+        })))
+      } else {
+        setMessages([])
+      }
     } catch (err) {
       console.error("Fetch Messages Error:", err)
     } finally {
