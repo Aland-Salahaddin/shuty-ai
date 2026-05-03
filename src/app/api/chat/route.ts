@@ -154,13 +154,21 @@ export async function POST(req: Request) {
 
     // Save user message to history if sessionId exists
     if (sessionId) {
-      await saveMessage({
-        user_id: userId,
-        session_id: sessionId,
-        role: 'user',
-        content: lastMsg.content || "",
-        image: lastMsg.image
-      }).catch(console.error);
+      try {
+        await saveMessage({
+          user_id: userId,
+          session_id: sessionId,
+          role: 'user',
+          content: lastMsg.content || "",
+          image: lastMsg.image
+        });
+      } catch (saveErr: any) {
+        console.error("User Message Save Error:", saveErr);
+        return NextResponse.json({ 
+          error: "HISTORY_SAVE_FAILED", 
+          message: "نەتوانرا پەیامەکەت لە مێژوودا پاشەکەوت بکرێت. تکایە دڵنیا بەرەوە داتابەیسی D1 بە دروستی کار دەکات." 
+        }, { status: 500 });
+      }
     }
 
     // Format messages for multimodal support
@@ -247,12 +255,18 @@ export async function POST(req: Request) {
       
       // Save assistant message to history
       if (sessionId) {
-        await saveMessage({
-          user_id: userId,
-          session_id: sessionId,
-          role: 'assistant',
-          content: responseText
-        }).catch(err => console.error("History Save Error:", err));
+        try {
+          await saveMessage({
+            user_id: userId,
+            session_id: sessionId,
+            role: 'assistant',
+            content: responseText
+          });
+        } catch (saveErr: any) {
+          console.error("Assistant Message Save Error:", saveErr);
+          // We don't fail the whole request here since AI already responded, 
+          // but we log it for diagnostics.
+        }
       }
 
       return NextResponse.json({ text: responseText });

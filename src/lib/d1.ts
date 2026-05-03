@@ -73,6 +73,9 @@ export async function initD1Schema(): Promise<void> {
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       )
     `)
+    // Migration: ensure image column exists if table was created earlier without it
+    await d1Query(`ALTER TABLE messages ADD COLUMN image TEXT`).catch(() => {}) 
+
     await d1Query(`
       CREATE TABLE IF NOT EXISTS profiles (
         clerk_id TEXT PRIMARY KEY,
@@ -84,7 +87,7 @@ export async function initD1Schema(): Promise<void> {
     `)
   } catch (err: any) {
     console.error('D1 Schema Init Error:', err);
-    throw new Error(`D1 Query Failed: ${err.message}`);
+    throw new Error(`D1 Init Failed: ${err.message}`);
   }
 }
 
