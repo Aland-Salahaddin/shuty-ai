@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { supabase } from '@/lib/supabase'
-import { Send, X, MessageSquare, ShieldCheck, Image as ImageIcon } from 'lucide-react'
+import { Send, X, MessageSquare, ShieldCheck, Image as ImageIcon, Maximize2, Minimize2 } from 'lucide-react'
 
 interface Message {
   id: string
@@ -19,6 +19,7 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
   const [roomId, setRoomId] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [isMaximized, setIsMaximized] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // 1. Get or Create Support Room
@@ -181,25 +182,44 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
 
   return (
     <div style={{
-      position: 'fixed', bottom: 30, right: 30, zIndex: 1000,
-      width: 380, height: 500, background: '#F0E6D0',
-      border: '4px solid #1C1A17', boxShadow: '-12px 12px 0 0 #1C1A17',
-      display: 'flex', flexDirection: 'column', overflow: 'hidden'
+      position: 'fixed', 
+      bottom: isMaximized ? 20 : 30, 
+      right: isMaximized ? 20 : 30, 
+      zIndex: 1000,
+      width: isMaximized ? 'calc(100vw - 40px)' : 380, 
+      height: isMaximized ? 'calc(100vh - 40px)' : 500, 
+      maxWidth: isMaximized ? 1000 : 380,
+      background: '#F0E6D0',
+      border: '4px solid #1C1A17', 
+      boxShadow: isMaximized ? '-16px 16px 0 0 #1C1A17' : '-12px 12px 0 0 #1C1A17',
+      display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      transition: 'all 0.3s ease'
     }}>
       {/* Header */}
       <div style={{
-        padding: '16px 20px', background: '#B5462E', color: '#F0E6D0',
+        padding: '12px 20px', background: '#B5462E', color: '#F0E6D0',
         borderBottom: '3px solid #1C1A17', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <MessageSquare size={20} />
-          <span style={{ fontFamily: 'Vazirmatn', fontWeight: 900, fontSize: 16 }}>کڕینی پڕۆ (چاتی ڕاستەوخۆ)</span>
+          <MessageSquare size={18} />
+          <span style={{ fontFamily: 'Vazirmatn', fontWeight: 900, fontSize: 15 }}>چاتی ڕاستەوخۆ</span>
         </div>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#F0E6D0', cursor: 'pointer' }}><X size={20} /></button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button 
+            onClick={() => setIsMaximized(!isMaximized)} 
+            style={{ background: 'none', border: 'none', color: '#F0E6D0', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            title={isMaximized ? "بچووککردنەوە" : "گەورەکردنەوە"}
+          >
+            {isMaximized ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+          </button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#F0E6D0', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+            <X size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: isMaximized ? 32 : 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{
             background: '#EDE0C5', border: '2px dashed #6B7341', padding: 12,
             fontSize: 11, color: '#6B7341', textAlign: 'center', fontWeight: 700, marginBottom: 8
@@ -210,7 +230,7 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
         {messages.map((m) => (
           <div key={m.id} style={{
             alignSelf: m.is_admin ? 'flex-start' : 'flex-end',
-            maxWidth: '85%',
+            maxWidth: isMaximized ? '70%' : '85%',
             display: 'flex', flexDirection: 'column', gap: 4
           }}>
              <div style={{
@@ -219,11 +239,11 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
                 color: '#1C1A17',
                 border: '2px solid #1C1A17',
                 boxShadow: m.is_admin ? '-4px 4px 0 0 #1C1A17' : '-4px 4px 0 0 #B5462E',
-                fontSize: 13, fontWeight: 600, fontFamily: 'Vazirmatn',
+                fontSize: isMaximized ? 15 : 13, fontWeight: 600, fontFamily: 'Vazirmatn',
                 lineHeight: 1.5
              }}>
                 {(m as any).image && (
-                  <div style={{ marginBottom: 8, borderRadius: 8, overflow: 'hidden', border: '2px solid #1C1A17', maxWidth: 300 }}>
+                  <div style={{ marginBottom: 8, borderRadius: 8, overflow: 'hidden', border: '2px solid #1C1A17', maxWidth: isMaximized ? 600 : 300 }}>
                     <img src={(m as any).image} alt="attachment" style={{ width: '100%', height: 'auto', display: 'block' }} />
                   </div>
                 )}
@@ -280,7 +300,7 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
           style={{
             flex: 1, padding: '10px 14px', background: '#F0E6D0',
             border: '2.5px solid #1C1A17', outline: 'none',
-            fontFamily: 'Vazirmatn', fontWeight: 700, fontSize: 13
+            fontFamily: 'Vazirmatn', fontWeight: 700, fontSize: isMaximized ? 15 : 13
           }}
         />
         <button
