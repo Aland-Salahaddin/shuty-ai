@@ -24,6 +24,10 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
 
   // 1. Get or Create Support Room
   useEffect(() => {
+    if (user && isOpen) {
+      user.reload() // Force refresh metadata (for timeout/ban real-time updates)
+    }
+
     if (!supabase || (user && isOpen)) {
       if (!supabase) return;
       

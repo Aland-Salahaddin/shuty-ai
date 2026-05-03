@@ -187,7 +187,7 @@ export default function AdminSupportPage() {
       const res = await fetch('/api/admin/update-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: uid, type, value })
+        body: JSON.stringify({ targetUserId: uid, action: type, value })
       })
       if (!res.ok) throw new Error('Failed to update')
       alert('Updated successfully')

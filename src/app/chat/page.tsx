@@ -151,6 +151,82 @@ function HandFrame({ children, tilt = '0deg', className = '' }: {
     </div>
   )
 }
+function BannedScreen({ onSignOut }: { onSignOut: () => void }) {
+  return (
+    <div dir="rtl" style={{ 
+      minHeight: '100vh', 
+      background: 'radial-gradient(circle at center, #1C1A17 0%, #000000 100%)', 
+      color: '#F0E6D0', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      fontFamily: 'Vazirmatn', 
+      padding: 40, 
+      textAlign: 'center',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Decorative background elements */}
+      <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '40%', height: '40%', background: 'rgba(181, 70, 46, 0.05)', filter: 'blur(100px)', borderRadius: '50%' }} />
+      <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '40%', height: '40%', background: 'rgba(212, 165, 58, 0.05)', filter: 'blur(100px)', borderRadius: '50%' }} />
+
+      <div style={{ 
+        background: 'rgba(28, 26, 23, 0.8)', 
+        backdropFilter: 'blur(12px)', 
+        border: '3px solid #B5462E', 
+        padding: '50px 30px', 
+        maxWidth: 500,
+        boxShadow: '0 20px 50px rgba(0,0,0,0.5), 0 0 20px rgba(181, 70, 46, 0.2)',
+        position: 'relative',
+        zIndex: 1
+      }}>
+        <div style={{ 
+          background: '#B5462E', 
+          width: 100, height: 100, 
+          borderRadius: '50%', 
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 30px',
+          boxShadow: '0 0 30px rgba(181, 70, 46, 0.4)'
+        }}>
+          <ShieldAlert size={50} color="#F0E6D0" />
+        </div>
+        
+        <h1 style={{ fontSize: 32, fontWeight: 900, color: '#B5462E', marginBottom: 20 }}>هەژمارەکەت بلۆک کراوە</h1>
+        <p style={{ fontSize: 17, fontWeight: 600, color: '#EDE0C5', lineHeight: 1.8, marginBottom: 40 }}>
+          بەهۆی سەرپێچی کردنی یاساکانی بەکارهێنان یان هەڵسوکەوتی نەشیاو، گەیشتنت بەم خزمەتگوزارییە بۆ هەمیشە بڕاوە. 
+          ئەگەر پێتوایە ئەمە بە هەڵە ڕوویداوە، دەتوانیت پەیوەندیمان پێوە بکەیت.
+        </p>
+
+        <button 
+          onClick={onSignOut} 
+          style={{ 
+            background: '#B5462E', 
+            color: '#F0E6D0', 
+            border: 'none', 
+            padding: '16px 40px', 
+            fontWeight: 900, 
+            fontSize: 16,
+            cursor: 'pointer', 
+            boxShadow: '-6px 6px 0 #F0E6D0',
+            transition: 'transform 0.2s, box-shadow 0.2s',
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translate(2px, -2px)';
+            e.currentTarget.style.boxShadow = '-8px 8px 0 #F0E6D0';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'none';
+            e.currentTarget.style.boxShadow = '-6px 6px 0 #F0E6D0';
+          }}
+        >
+          چوونە دەرەوە لە هەژمار
+        </button>
+      </div>
+    </div>
+  )
+}
+
 
 /* ── Types ──────────────────────────────────────────────── */
 interface Message { role: 'user' | 'assistant'; content: string; image?: string }
@@ -161,7 +237,7 @@ function ChatContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
-  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [selectedImages, setSelectedImages] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [sessionId, setSessionId] = useState('')
   const [sessions, setSessions] = useState<Session[]>([])
@@ -185,14 +261,7 @@ function ChatContent() {
   const currentPlan = metadata?.plan || 'FREE'
 
   if (isLoaded && isBanned) {
-    return (
-      <div dir="rtl" style={{ minHeight: '100vh', background: '#1C1A17', color: '#B5462E', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'Vazirmatn', padding: 20, textAlign: 'center' }}>
-        <ShieldAlert size={80} style={{ marginBottom: 20 }} />
-        <h1 style={{ fontSize: 40, fontWeight: 900 }}>هەژمارەکەت بلۆک کراوە</h1>
-        <p style={{ fontSize: 18, fontWeight: 700, maxWidth: 500, marginTop: 10, color: '#F0E6D0' }}>بەهۆی سەرپێچی کردنی یاساکان، گەیشتنت بەم خزمەتگوزارییە نییە. ئەگەر پێتوایە هەڵەیەک ڕوویداوە پەیوەندیمان پێوە بکە.</p>
-        <button onClick={() => clerk.signOut()} style={{ marginTop: 30, background: '#B5462E', color: '#F0E6D0', border: 'none', padding: '12px 30px', fontWeight: 900, cursor: 'pointer', boxShadow: '4px 4px 0 #F0E6D0' }}>چوونە دەرەوە</button>
-      </div>
-    )
+    return <BannedScreen onSignOut={() => clerk.signOut({ redirectUrl: '/' })} />
   }
 
 
@@ -242,11 +311,16 @@ function ChatContent() {
       console.log("History Load Success:", data)
       
       if (data.messages && Array.isArray(data.messages)) {
-        setMessages(data.messages.map((m: any) => ({ 
-          role: m.role, 
-          content: m.content,
-          image: m.image 
-        })))
+        setMessages(data.messages.map((m: any) => {
+          let imgs: string[] = []
+          try {
+            if (m.image?.startsWith('[')) imgs = JSON.parse(m.image)
+            else if (m.image) imgs = [m.image]
+          } catch {
+            if (m.image) imgs = [m.image]
+          }
+          return { role: m.role, content: m.content, image: imgs[0], images: imgs }
+        }))
       } else {
         setMessages([])
       }
@@ -258,18 +332,23 @@ function ChatContent() {
   }
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
+    const files = e.target.files
+    if (!files) return
+    
+    const newImages = [...selectedImages]
+    const remaining = 10 - newImages.length
+    
+    Array.from(files).slice(0, remaining).forEach(file => {
       if (file.size > 2 * 1024 * 1024) {
-        alert('قەبارەی وێنە نابێت لە ٢ مێگابایت زیاتر بێت');
-        return;
+        alert('قەبارەی وێنە نابێت لە ٢ مێگابایت زیاتر بێت')
+        return
       }
       const reader = new FileReader()
       reader.onloadend = () => {
-        setSelectedImage(reader.result as string)
+        setSelectedImages(prev => [...prev, reader.result as string].slice(0, 10))
       }
       reader.readAsDataURL(file)
-    }
+    })
   }
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -308,20 +387,26 @@ function ChatContent() {
     }
   }
 
-  const handleSend = async (retryContent?: string, retryImage?: string) => {
-    const sendingSessionId = sessionId // Capture the session ID when the request starts
+  const handleSend = async (retryContent?: string, retryImages?: string[]) => {
+    const sendingSessionId = sessionId 
     const contentToSend = retryContent !== undefined ? retryContent : input
-    const imageToSend = retryImage !== undefined ? retryImage : selectedImage
+    const imagesToSend = retryImages !== undefined ? retryImages : selectedImages
 
     const safeInput = String(contentToSend || '')
-    if ((!safeInput.trim() && !imageToSend) || loading) return
+    if ((!safeInput.trim() && (!imagesToSend || imagesToSend.length === 0)) || loading) return
     
-    const userMsg: Message = { role: 'user', content: safeInput, image: imageToSend || undefined }
+    // Support multiple images
+    const userMsg: Message & { images?: string[] } = { 
+      role: 'user', 
+      content: safeInput, 
+      image: imagesToSend?.[0] || undefined, // fallback for single image
+      images: imagesToSend || [] 
+    }
     
     if (retryContent === undefined) {
       setMessages(prev => [...prev, userMsg])
       setInput('')
-      setSelectedImage(null)
+      setSelectedImages([])
     }
 
     setLoading(true)
@@ -329,7 +414,14 @@ function ChatContent() {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...messages, userMsg], sessionId: sendingSessionId }),
+        body: JSON.stringify({ 
+          messages: [...messages, userMsg].map(m => ({
+            role: m.role,
+            content: m.content,
+            images: (m as any).images || (m.image ? [m.image] : [])
+          })), 
+          sessionId: sendingSessionId 
+        }),
       })
       
       if (!response.ok) {
@@ -372,7 +464,7 @@ function ChatContent() {
   const retryLastMessage = () => {
     const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
     if (lastUserMsg) {
-      handleSend(lastUserMsg.content, lastUserMsg.image)
+      handleSend(lastUserMsg.content, lastUserMsg.image ? [lastUserMsg.image] : [])
     }
   }
 
@@ -582,12 +674,10 @@ function ChatContent() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px' }}>
             <div 
-              onClick={() => clerk.openUserProfile()}
               style={{
                 width: 36, height: 36, borderRadius: '50%', border: '2.5px solid #1C1A17',
-                overflow: 'hidden', background: '#D4A53A', flexShrink: 0, cursor: 'pointer'
+                background: 'transparent', flexShrink: 0, cursor: 'pointer'
             }}>
-              {user?.imageUrl ? <img src={user.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
             </div>
             <div 
               style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} 
@@ -595,7 +685,7 @@ function ChatContent() {
               title="ڕێکخستنی هەژمار"
             >
               <div style={{ fontSize: 12, fontWeight: 800, color: '#1C1A17', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user?.fullName || 'بەکارهێنەر'}
+                {user?.username || 'بەکارهێنەر'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <div style={{ fontSize: 10, color: '#6B7341', fontWeight: 600 }}>
@@ -703,18 +793,22 @@ function ChatContent() {
                 maxWidth: '75%',
                 alignSelf: isUser ? 'flex-end' : 'flex-start',
               }}>
-                {/* Avatar */}
-                <div style={{
-                  width: 36, height: 36, flexShrink: 0,
-                  border: '2.5px solid #1C1A17',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'Vazirmatn', fontWeight: 800, fontSize: 14,
-                  background: isUser ? '#B5462E' : '#EDE0C5',
-                  color: isUser ? '#F0E6D0' : '#1C1A17',
-                  transform: `rotate(${isUser ? '1deg' : '-1deg'})`,
-                  boxShadow: isUser ? '-3px 3px 0 0 #1C1A17' : '-3px 3px 0 0 #1C1A17',
-                }}>
-                  {isUser ? 'ب' : 'ش'}
+                {/* Avatar & Username */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-end' : 'flex-start', gap: 4 }}>
+                  <div style={{
+                    width: 36, height: 36, flexShrink: 0,
+                    border: '2.5px solid #1C1A17',
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'transparent',
+                    color: '#1C1A17',
+                    transform: `rotate(${isUser ? '1deg' : '-1deg'})`,
+                    boxShadow: '-3px 3px 0 0 #1C1A17',
+                  }}>
+                  </div>
+                  <div style={{ fontSize: 10, fontWeight: 900, color: '#1C1A17', fontFamily: 'Vazirmatn' }}>
+                    {isUser ? (user?.username || 'بەکارهێنەر') : 'شوتی'}
+                  </div>
                 </div>
 
                 {/* Bubble */}
@@ -728,15 +822,20 @@ function ChatContent() {
                   transform: `rotate(${isUser ? '0.5deg' : '-0.5deg'})`,
                 }}>
                   <div style={{ marginBottom: m.content.includes('❌ **هەڵە:**') ? 12 : 0 }}>
-                  {m.image && (
-                    <img 
-                      src={m.image} 
-                      alt="attachment" 
-                      style={{ 
-                        maxWidth: 300, display: 'block', borderRadius: 6, marginBottom: 10, 
-                        border: '2px solid #1C1A17', boxShadow: '-3px 3px 0 0 #1C1A17'
-                      }} 
-                    />
+                  {((m as any).images || (m.image ? [m.image] : [])).length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                      {((m as any).images || (m.image ? [m.image] : [])).map((img: string, idx: number) => (
+                        <img 
+                          key={idx}
+                          src={img} 
+                          alt="attachment" 
+                          style={{ 
+                            height: 120, width: 120, objectFit: 'cover', borderRadius: 6,
+                            border: '2px solid #1C1A17', boxShadow: '-3px 3px 0 0 #1C1A17'
+                          }} 
+                        />
+                      ))}
+                    </div>
                   )}
                   {m.content.split('\n').map((line, li) => (
                     <p key={li} style={{ margin: li === 0 ? 0 : '4px 0 0' }}>{renderMarkdown(line)}</p>
@@ -760,7 +859,10 @@ function ChatContent() {
 
           {loading && (
             <div style={{ display: 'flex', flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 12, maxWidth: '75%', alignSelf: 'flex-start' }}>
-              <div style={{ width: 36, height: 36, flexShrink: 0, border: '2.5px solid #1C1A17', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Vazirmatn', fontWeight: 800, fontSize: 14, background: '#EDE0C5', color: '#1C1A17', transform: 'rotate(-1deg)', boxShadow: '-3px 3px 0 0 #1C1A17' }}>ش</div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+                <div style={{ width: 36, height: 36, flexShrink: 0, border: '2.5px solid #1C1A17', borderRadius: '50%', background: 'transparent', transform: 'rotate(-1deg)', boxShadow: '-3px 3px 0 0 #1C1A17' }}></div>
+                <div style={{ fontSize: 10, fontWeight: 900, color: '#1C1A17', fontFamily: 'Vazirmatn' }}>شوتی</div>
+              </div>
               <div style={{ padding: '14px 20px', background: '#EDE0C5', border: '2.5px solid #1C1A17', boxShadow: '-5px 5px 0 0 #1C1A17', display: 'flex', gap: 6, alignItems: 'center' }}>
                 <span style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn', marginLeft: 4 }}>شوتی خەریکی بیرکردنەوەیە…</span>
                 {[0, 1, 2].map(d => (
@@ -796,16 +898,19 @@ function ChatContent() {
             backgroundImage: 'repeating-linear-gradient(90deg, transparent 0px, transparent 10px, rgba(255,255,255,0.2) 10px, rgba(255,255,255,0.2) 12px)',
           }} />
 
-          <div style={{ display: 'flex', gap: 0, border: '3px solid #1C1A17', boxShadow: '-6px 6px 0 0 #1C1A17', background: '#F0E6D0', marginTop: 16, flexDirection: 'column' }}>
-            {selectedImage && (
-              <div style={{ padding: 12, borderBottom: '3px solid #1C1A17', position: 'relative', background: '#EDE0C5' }}>
-                <img src={selectedImage} alt="preview" style={{ maxHeight: 120, borderRadius: 8, border: '2px solid #1C1A17' }} />
-                <button 
-                  onClick={() => setSelectedImage(null)}
-                  style={{ position: 'absolute', top: 20, left: 20, background: '#B5462E', color: '#F0E6D0', border: '2px solid #1C1A17', borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                >
-                  <X size={14} />
-                </button>
+            {selectedImages.length > 0 && (
+              <div style={{ padding: 12, borderBottom: '3px solid #1C1A17', position: 'relative', background: '#EDE0C5', display: 'flex', gap: 10, overflowX: 'auto' }}>
+                {selectedImages.map((img, idx) => (
+                  <div key={idx} style={{ position: 'relative', flexShrink: 0 }}>
+                    <img src={img} alt="preview" style={{ height: 100, width: 100, objectFit: 'cover', borderRadius: 8, border: '2px solid #1C1A17' }} />
+                    <button 
+                      onClick={() => setSelectedImages(prev => prev.filter((_, i) => i !== idx))}
+                      style={{ position: 'absolute', top: -8, left: -8, background: '#B5462E', color: '#F0E6D0', border: '2px solid #1C1A17', borderRadius: '50%', width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10 }}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
             <div style={{ display: 'flex' }}>
@@ -896,23 +1001,22 @@ function ChatContent() {
               {isTimedOut ? `تۆ بێدەنگ کراویت تا: ${timeoutUntil?.toLocaleString('ku-IQ')}` : 'شوتی ژیری دەستکردە — لەوانەیە هەڵە بکات'}
             </p>
             <p style={{ fontSize: 10, color: '#6B7341', fontFamily: 'Vazirmatn', fontWeight: 800 }}>
-              {toArabicDigits(input.length)} / {toArabicDigits(currentPlan === 'ULTRA' ? SHUTY_CONFIG.ULTRA.maxCharacters : (currentPlan === 'PRO' ? SHUTY_CONFIG.PRO.maxCharacters : SHUTY_CONFIG.FREE.maxCharacters))} پیت
+              {toArabicDigits(input.length)} {'/'} {toArabicDigits(currentPlan === 'ULTRA' ? SHUTY_CONFIG.ULTRA.maxCharacters : (currentPlan === 'PRO' ? SHUTY_CONFIG.PRO.maxCharacters : SHUTY_CONFIG.FREE.maxCharacters))} پیت
             </p>
           </div>
         </div>
+
+        <Modal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onConfirm={confirmDelete}
+          title="سڕینەوەی گفتوگۆ"
+          message="ئایا دڵنیایت لە سڕینەوەی ئەم گفتوگۆیە؟ هەموو پەیامەکان بە یەکجاری دەسڕدرێنەوە."
+        />
+
+        {/* SUPPORT CHAT MODAL */}
+        <SupportChat isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} />
       </div>
-
-      <Modal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onConfirm={confirmDelete}
-        title="سڕینەوەی گفتوگۆ"
-        message="ئایا دڵنیایت لە سڕینەوەی ئەم گفتوگۆیە؟ هەموو پەیامەکان بە یەکجاری دەسڕدرێنەوە."
-      />
-
-      {/* SUPPORT CHAT MODAL */}
-      <SupportChat isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} />
-    </div>
   )
 }
 

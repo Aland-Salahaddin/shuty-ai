@@ -17,10 +17,27 @@ const SYSTEM_PROMPT = `تۆ "شوتی" (Shuty)یت، پێشکەوتووترین 
 [وەشانی ئێستا]: {VERSION_NAME}
 [پلانی بەکارهێنەر]: {PLAN_TYPE}
 
-ڕەفتار بەپێی وەشانی تایبەت:
-- شوتی ١.٥ (FREE): یاریدەدەرێکی پاراو، ڕاستگۆ و خێرایە. تەنها وەڵامی پرسیارەکان دەداتەوە بە شێوەیەکی ڕاستەوخۆ و ئەدەبی.
-- شوتی ٢.٥ (PRO): پسپۆڕێکی لێهاتووە. زانیاری وردتر و فراوانتر پێشکەش دەکات. لە شیکردنەوەکانیدا قووڵتر دەبێتەوە و هەمیشە هەوڵ دەدات وەڵامەکانی بە زمانی سۆرانییەکی زۆر پاراو و ڕازاوە بنووسێت.
-- شوتی ٣.٠ (ULTRA): لوتکەی ژیریی شوتییە. تۆ لێرەدا وەک "مێشکێکی گەورەی کورد" دەردەکەویت. شیکارییەکانت بێوێنەن، داهێنەریت، و زمانێکی ئەوەندە پاراو و ئەکادیمی بەکاردەهێنیت کە هیچ هەڵەیەکی تێدا نییە. تۆ دەتوانیت ئاڵۆزترین کێشەکان شیکار بکەیت و وەڵامەکانت هەمیشە تێڕامانێکی قووڵی تێدایە.
+ڕەفتار و ئاستی وەڵامدانەوە بەپێی پلانی بەکارهێنەر:
+
+١. ئەگەر پلانی بەکارهێنەر (FREE) بوو:
+   - وەک یاریدەدەرێکی پاراو و خێرا وەڵام بدەرەوە.
+   - وەڵامەکانت کورت و پوخت بن (بۆ ئەوەی بەکارهێنەر زوو بگات بە ئەنجام).
+   - زمانێکی سادە و پاراو بەکاربهێنە.
+
+٢. ئەگەر پلانی بەکارهێنەر (PRO) بوو:
+   - تۆ لێرەدا "شارەزایەکی پسپۆڕ"یت (Senior Expert).
+   - وەڵامەکانت دەبێت زۆر وردتر و درێژتر بن.
+   - بابەتەکان لە چەند ڕەهەندێکی جیاوازەوە شیکار بکە.
+   - زمانێکی زۆر دەوڵەمەند و ڕازاوەی سۆرانی بەکاربهێنە کە نیشانەی ئاست بەرزیی تۆ بێت.
+   - لە هەر وەڵامێکدا هەوڵ بدە زانیاریی زیادە و بەسوود پێشکەش بکەیت کە بەکارهێنەر داوای نەکردووە بەڵام پێویستییەتی.
+
+٣. ئەگەر پلانی بەکارهێنەر (ULTRA) بوو:
+   - تۆ لێرەدا "مێشکێکی بێوێنە" و "زانایەکی مەزن"یت (Supreme Intellect).
+   - ئاستی وەڵامەکانت دەبێت لە ئاستی دکتۆرا و توێژینەوەی ئەکادیمیدا بن.
+   - شیکارییەکانت دەبێت زۆر قووڵ، فەلسەفی، و داهێنەرانە بن.
+   - زمانێکی ئەوەندە پاراو و ئەکادیمی و بێخەوش بەکاربهێنە کە هیچ هەڵەیەکی تێدا نەبێت.
+   - بۆ هەر کێشەیەک، تەنها وەڵام مەدەرەوە، بەڵکو باشترین و نوێترین ڕێگەچارەی داهێنەرانە پێشنیار بکە.
+   - وەڵامەکانت دەبێت زۆر تێروتەسەل بن و هەموو لایەنە ئەگەرەییەکان بگرنەوە.
 
 یاسا گرنگەکانی زمان:
 ١. بە هیچ شێوەیەک وەرگێڕانی ڕاستەوخۆ لە ئینگلیزی یان عەرەبی مەکە. بە زمانی سۆرانییەکی ڕەسەن و مۆدێرن قسە بکە.
@@ -162,14 +179,16 @@ export async function POST(req: Request) {
 
     // Check for images in the new message
     const lastMsg = messages[messages.length - 1]
-    if (lastMsg.role === 'user' && lastMsg.image) {
-      if (imagesUsedToday >= maxImages) {
+    const msgImages = lastMsg.images || (lastMsg.image ? [lastMsg.image] : [])
+    
+    if (lastMsg.role === 'user' && msgImages.length > 0) {
+      if (imagesUsedToday + msgImages.length > maxImages) {
         return new NextResponse(JSON.stringify({
           error: 'LIMIT_REACHED',
-          message: `تۆ سنووری وێنەکانی ئەمڕۆت تەواو کردووە (${maxImages} وێنە). بۆ بەردەوامبوون هەژمارەکەت بەرز بکەرەوە.`
+          message: `تۆ سنووری وێنەکانی ئەمڕۆت تەواو کردووە (تەنها ${maxImages - imagesUsedToday} وێنەت ماوە). بۆ بەردەوامبوون هەژمارەکەت بەرز بکەرەوە.`
         }), { status: 403 })
       }
-      imagesUsedToday += 1
+      imagesUsedToday += msgImages.length
     }
 
     // Save user message to history if sessionId exists
@@ -189,7 +208,7 @@ export async function POST(req: Request) {
           session_id: sessionId,
           role: 'user',
           content: lastMsg.content || "",
-          image: lastMsg.image,
+          image: msgImages.length > 0 ? JSON.stringify(msgImages) : undefined,
           title: aiTitle
         });
       } catch (saveErr: any) {
@@ -203,12 +222,13 @@ export async function POST(req: Request) {
 
     // Format messages for multimodal support
     const formattedMessages = messages.map((m: any) => {
-      if (m.image && m.role === 'user') {
+      const msgImages = m.images || (m.image ? (m.image.startsWith('[') ? JSON.parse(m.image) : [m.image]) : [])
+      if (msgImages.length > 0 && m.role === 'user') {
         return {
           role: m.role,
           content: [
-            { type: 'text', text: m.content || "ئەم وێنەیە شی بکەرەوە" },
-            { type: 'image_url', image_url: { url: m.image } }
+            { type: 'text', text: m.content || "ئەم وێنانە شی بکەرەوە" },
+            ...msgImages.map((url: string) => ({ type: 'image_url', image_url: { url } }))
           ]
         }
       }
