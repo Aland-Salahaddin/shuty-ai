@@ -18,6 +18,7 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
   const [input, setInput] = useState('')
   const [roomId, setRoomId] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // 1. Get or Create Support Room
@@ -92,21 +93,12 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
   // 4. Send Message
   const handleSend = async (imgOverride?: string) => {
     const msgContent = input.trim().substring(0, 500)
-    const imageToSend = imgOverride || null
-
+    const imageToSend = selectedImage || imgOverride || null
+    
     if (!supabase || (!msgContent && !imageToSend) || !roomId || !user || isSending) return
 
-    const { data: messages } = await supabase.from('support_messages').select('id').eq('room_id', roomId)
-    const msgCount = messages?.length || 0
-
-    const { data: room } = await supabase.from('support_rooms').select('is_accepted').eq('id', roomId).single()
-
-    if (msgCount >= 5 && !room?.is_accepted) {
-      alert('تکایە چاوەڕێ بکە تا ئەدمین نامەکەت قبووڵ دەکات پێش ئەوەی نامەی تر بنێریت.')
-      return
-    }
-
     setInput('')
+    setSelectedImage(null)
     setIsSending(true)
 
     const { error } = await supabase.from('support_messages').insert({
@@ -121,6 +113,7 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
       setTimeout(() => setIsSending(false), 2000)
     } else {
       console.error('Support Chat Error:', error)
+      alert(`هەڵە لە ناردنی نامە: ${error.message}. ئەگەر وێنە دەنێریت، دڵنیا بەرەوە کە ستوونی 'image' لە Supabase زیاد کراوە.`)
       setInput(msgContent)
       setIsSending(false)
     }
@@ -129,9 +122,13 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert('قەبارەی وێنەکە نابێت لە ٢ مێگابایت زیاتر بێت.')
+        return
+      }
       const reader = new FileReader()
       reader.onloadend = () => {
-        handleSend(reader.result as string)
+        setSelectedImage(reader.result as string)
       }
       reader.readAsDataURL(file)
     }
@@ -204,6 +201,19 @@ export function SupportChat({ isOpen, onClose }: { isOpen: boolean; onClose: () 
           </div>
         ))}
       </div>
+
+      {/* Preview */}
+      {selectedImage && (
+        <div style={{ padding: '8px 16px', background: '#EDE0C5', borderTop: '2px solid #1C1A17', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 4, overflow: 'hidden', border: '2px solid #1C1A17' }}>
+            <img src={selectedImage} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#B5462E', flex: 1 }}>وێنە ئامادەیە بۆ ناردن</span>
+          <button onClick={() => setSelectedImage(null)} style={{ background: '#B5462E', color: '#F0E6D0', border: '1.5px solid #1C1A17', padding: '2px 6px', cursor: 'pointer' }}>
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Input */}
       <div style={{ padding: 16, borderTop: '3px solid #1C1A17', background: '#EDE0C5', display: 'flex', gap: 8 }}>

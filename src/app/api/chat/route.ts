@@ -81,7 +81,7 @@ export async function POST(req: Request) {
       console.error("D1_INIT_ERROR:", dbError);
       return NextResponse.json({ 
         error: "DB_INIT_FAILED", 
-        message: "کێشە لە چالاککردنی بنکەی زانیاریدا هەیە. تکایە دڵنیا بەرەوە کلیلەکانی Cloudflare دروستن." 
+        message: `کێشە لە بنکەی زانیاریدا هەیە: ${dbError.message}` 
       }, { status: 500 });
     }
 

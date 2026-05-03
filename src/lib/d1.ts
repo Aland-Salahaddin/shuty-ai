@@ -3,9 +3,13 @@
  */
 
 const CF_API = 'https://api.cloudflare.com/client/v4'
-const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID!
-const DB_ID = process.env.CLOUDFLARE_D1_DATABASE_ID!
-const TOKEN = process.env.CLOUDFLARE_API_TOKEN!
+const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || ''
+const DB_ID = process.env.CLOUDFLARE_D1_DATABASE_ID || ''
+const TOKEN = process.env.CLOUDFLARE_API_TOKEN || ''
+
+if (!ACCOUNT_ID || !DB_ID || !TOKEN) {
+  console.warn('Cloudflare D1 environment variables are missing! AI Chat persistence will fail.');
+}
 
 interface D1Result<T = Record<string, unknown>> {
   results: T[]
@@ -41,34 +45,47 @@ export async function d1Query<T = Record<string, unknown>>(
 
 /** Ensure tables exist */
 export async function initD1Schema(): Promise<void> {
-  await d1Query(`
-    CREATE TABLE IF NOT EXISTS sessions (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      title TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    )
-  `)
-  await d1Query(`
-    CREATE TABLE IF NOT EXISTS messages (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      session_id TEXT NOT NULL,
-      role TEXT NOT NULL,
-      content TEXT NOT NULL,
-      image TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    )
-  `)
-  await d1Query(`
-    CREATE TABLE IF NOT EXISTS profiles (
-      clerk_id TEXT PRIMARY KEY,
-      email TEXT,
-      plan TEXT DEFAULT 'FREE',
-      points INTEGER DEFAULT 0,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    )
-  `)
+  if (!ACCOUNT_ID || !DB_ID || !TOKEN) {
+    const missing = [];
+    if (!ACCOUNT_ID) missing.push('CLOUDFLARE_ACCOUNT_ID');
+    if (!DB_ID) missing.push('CLOUDFLARE_D1_DATABASE_ID');
+    if (!TOKEN) missing.push('CLOUDFLARE_API_TOKEN');
+    throw new Error(`Cloudflare keys missing: ${missing.join(', ')}`);
+  }
+
+  try {
+    await d1Query(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `)
+    await d1Query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        session_id TEXT NOT NULL,
+        role TEXT NOT NULL,
+        content TEXT NOT NULL,
+        image TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `)
+    await d1Query(`
+      CREATE TABLE IF NOT EXISTS profiles (
+        clerk_id TEXT PRIMARY KEY,
+        email TEXT,
+        plan TEXT DEFAULT 'FREE',
+        points INTEGER DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `)
+  } catch (err: any) {
+    console.error('D1 Schema Init Error:', err);
+    throw new Error(`D1 Query Failed: ${err.message}`);
+  }
 }
 
 export interface Message {

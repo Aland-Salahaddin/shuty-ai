@@ -116,12 +116,17 @@ export default function AdminSupportPage() {
       await supabase.from('support_rooms').update({ last_message: new Date().toISOString() }).eq('id', selectedRoom.id)
     } else {
       console.error('Admin Send Error:', error)
+      alert(`Failed to send: ${error.message}. Make sure 'image' column exists in Supabase.`)
     }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Image too big. Max 2MB.')
+        return
+      }
       const reader = new FileReader()
       reader.onloadend = () => {
         setSelectedImage(reader.result as string)
