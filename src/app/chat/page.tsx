@@ -382,7 +382,9 @@ function ChatContent() {
             return;
           }
           const reader = new FileReader();
-          reader.onloadend = () => setSelectedImage(reader.result as string);
+          reader.onloadend = () => {
+            setSelectedImages(prev => [...prev, reader.result as string].slice(0, 10));
+          };
           reader.readAsDataURL(file);
           return;
         }
