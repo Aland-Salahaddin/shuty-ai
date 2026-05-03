@@ -966,12 +966,12 @@ function ChatContent() {
               </div>
               <button
                 onClick={handleSend}
-                disabled={loading || (!input.trim() && !selectedImage) || isTimedOut}
+                disabled={loading || (!input.trim() && selectedImages.length === 0) || isTimedOut}
                 className="press-effect"
                 style={{
-                  padding: '0 20px', background: loading || (!input.trim() && !selectedImage) || isTimedOut ? '#C8A882' : '#B5462E',
+                  padding: '0 20px', background: loading || (!input.trim() && selectedImages.length === 0) || isTimedOut ? '#C8A882' : '#B5462E',
                   border: 'none', borderRight: '3px solid #1C1A17',
-                  cursor: loading || (!input.trim() && !selectedImage) || isTimedOut ? 'not-allowed' : 'pointer',
+                  cursor: loading || (!input.trim() && selectedImages.length === 0) || isTimedOut ? 'not-allowed' : 'pointer',
                   color: '#F0E6D0', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'background 0.15s',
                   flexShrink: 0,
