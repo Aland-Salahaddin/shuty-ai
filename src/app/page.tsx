@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { Show, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs"
+import { UserButton, SignInButton, SignUpButton, SignedIn, SignedOut } from "@clerk/nextjs"
 
 
 
@@ -67,7 +67,7 @@ export default function HomePage() {
         <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.5px' }}>shuty.ai</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
           <Link href="/pricing" style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', textDecoration: 'none' }}>نرخەکان</Link>
-          <Show when="signed-out">
+          <SignedOut>
             <SignInButton mode="modal">
               <button style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>چوونەژوورەوە</button>
             </SignInButton>
@@ -84,8 +84,8 @@ export default function HomePage() {
                 دەستپێکردن
               </button>
             </SignUpButton>
-          </Show>
-          <Show when="signed-in">
+          </SignedOut>
+          <SignedIn>
             <Link href="/chat"
               style={{
                 padding: '8px 24px', background: '#D4A53A', color: '#1C1A17',
@@ -97,7 +97,8 @@ export default function HomePage() {
             >
               چوونە ناو چات ←
             </Link>
-          </Show>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
 
         </div>
 
@@ -131,17 +132,32 @@ export default function HomePage() {
               shuty.ai پلاتفۆرمی زیرەکی دەستکردییە کە تایبەت بۆ زمانی کوردی سۆرانی دروستکراوە. گەڕانی ڕاستەوخۆ لە ئینتەرنێت و وەڵامی درووست بە کوردی.
             </p>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Link
-                href="/auth?mode=signup"
-                style={{
-                  padding: '14px 32px', background: '#B5462E', color: '#F0E6D0',
-                  border: '3px solid #1C1A17', fontWeight: 800, fontSize: 16,
-                  textDecoration: 'none', boxShadow: '-6px 6px 0 0 #1C1A17',
-                  display: 'inline-block', transition: 'transform 0.1s, box-shadow 0.1s',
-                }}
-              >
-                دەستپێکردنی گفتوگۆ ←
-              </Link>
+              <SignedIn>
+                <Link
+                  href="/chat"
+                  style={{
+                    padding: '14px 32px', background: '#B5462E', color: '#F0E6D0',
+                    border: '3px solid #1C1A17', fontWeight: 800, fontSize: 16,
+                    textDecoration: 'none', boxShadow: '-6px 6px 0 0 #1C1A17',
+                    display: 'inline-block', transition: 'transform 0.1s, box-shadow 0.1s',
+                  }}
+                >
+                  گەڕانەوە بۆ گفتوگۆ ←
+                </Link>
+              </SignedIn>
+              <SignedOut>
+                <Link
+                  href="/auth?mode=signup"
+                  style={{
+                    padding: '14px 32px', background: '#B5462E', color: '#F0E6D0',
+                    border: '3px solid #1C1A17', fontWeight: 800, fontSize: 16,
+                    textDecoration: 'none', boxShadow: '-6px 6px 0 0 #1C1A17',
+                    display: 'inline-block', transition: 'transform 0.1s, box-shadow 0.1s',
+                  }}
+                >
+                  دەستپێکردنی گفتوگۆ ←
+                </Link>
+              </SignedOut>
               <Link
                 href="/pricing"
                 style={{
@@ -224,17 +240,32 @@ export default function HomePage() {
           <h2 style={{ fontSize: 28, fontWeight: 800, marginBottom: 12 }}>زمانی کوردی شایانی زیرەکییەکی شایستەیە.</h2>
           <Squiggle color="#B5462E" />
           <div style={{ marginTop: 28 }}>
-            <Link
-              href="/auth?mode=signup"
-              style={{
-                padding: '14px 36px', background: '#D4A53A', color: '#1C1A17',
-                border: '3px solid #1C1A17', fontWeight: 800, fontSize: 16,
-                textDecoration: 'none', boxShadow: '-6px 6px 0 0 #1C1A17',
-                display: 'inline-block',
-              }}
-            >
-              دەستپێکردنی بێبەرامبەر
-            </Link>
+            <SignedIn>
+              <Link
+                href="/chat"
+                style={{
+                  padding: '14px 36px', background: '#D4A53A', color: '#1C1A17',
+                  border: '3px solid #1C1A17', fontWeight: 800, fontSize: 16,
+                  textDecoration: 'none', boxShadow: '-6px 6px 0 0 #1C1A17',
+                  display: 'inline-block',
+                }}
+              >
+                بەردەوامبوون لە گفتوگۆ
+              </Link>
+            </SignedIn>
+            <SignedOut>
+              <Link
+                href="/auth?mode=signup"
+                style={{
+                  padding: '14px 36px', background: '#D4A53A', color: '#1C1A17',
+                  border: '3px solid #1C1A17', fontWeight: 800, fontSize: 16,
+                  textDecoration: 'none', boxShadow: '-6px 6px 0 0 #1C1A17',
+                  display: 'inline-block',
+                }}
+              >
+                دەستپێکردنی بێبەرامبەر
+              </Link>
+            </SignedOut>
           </div>
         </div>
       </section>
